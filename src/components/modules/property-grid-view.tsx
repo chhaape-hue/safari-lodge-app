@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DEMO_PROPERTIES, DEMO_ROOMS } from "@/lib/demo-data"
+import { useStore } from "@/lib/store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -40,6 +40,7 @@ const roomTypeLabel: Record<string, string> = {
 }
 
 export function PropertyGridView() {
+  const { properties: DEMO_PROPERTIES, rooms: DEMO_ROOMS } = useStore()
   const [selectedProperty, setSelectedProperty] = useState<string | null>(null)
 
   const roomsByProperty = DEMO_ROOMS.reduce((acc, room) => {

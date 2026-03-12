@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { DEMO_PROPERTIES, DEMO_ROOMS, DEMO_BOOKINGS, DEMO_GUESTS } from "@/lib/demo-data"
+import { useStore } from "@/lib/store"
 import { formatCurrency } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, Info, Plus } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { BookingForm } from "@/components/modules/booking-form"
 import type { Booking, Room } from "@/types"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -74,13 +75,17 @@ interface Props {
 }
 
 export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: Props) {
+  const { properties, rooms: allRooms, bookings: allBookings, guests } = useStore()
   const [startDate, setStartDate] = useState<Date>(() => {
     const d = new Date()
-    d.setDate(d.getDate() - 3) // show 3 days before today
+    d.setDate(d.getDate() - 3)
     return d
   })
   const [tooltip, setTooltip] = useState<TooltipData | null>(null)
   const [hoveredCell, setHoveredCell] = useState<string | null>(null)
+  const [showBookingForm, setShowBookingForm] = useState(false)
+  const [prefillDate, setPrefillDate] = useState<string | undefined>()
+  const [prefillRoomId, setPrefillRoomId] = useState<string | undefined>()
 
   // Generate day array
   const days = useMemo(() =>
@@ -88,20 +93,20 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
     [startDate]
   )
 
-  const property = DEMO_PROPERTIES.find(p => p.id === selectedPropertyId)!
-  const rooms = DEMO_ROOMS.filter(r => r.property_id === selectedPropertyId)
+  const property = properties.find(p => p.id === selectedPropertyId)!
+  const rooms = allRooms.filter(r => r.property_id === selectedPropertyId)
 
   // Bookings for this property, indexed by room
   const bookingsByRoom = useMemo(() => {
     const map: Record<string, Booking[]> = {}
-    DEMO_BOOKINGS
+    allBookings
       .filter(b => b.property_id === selectedPropertyId && b.status !== "cancelled")
       .forEach(b => {
         if (!map[b.room_id]) map[b.room_id] = []
         map[b.room_id].push(b)
       })
     return map
-  }, [selectedPropertyId])
+  }, [selectedPropertyId, allBookings])
 
   // For each room+day: which booking spans this day?
   function getBookingForDay(roomId: string, day: Date): Booking | null {
@@ -172,7 +177,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
     <div className="p-4 space-y-3">
       {/* Property Tabs */}
       <div className="flex gap-2 flex-wrap">
-        {DEMO_PROPERTIES.map(p => (
+        {properties.map(p => (
           <button
             key={p.id}
             onClick={() => onPropertyChange(p.id)}
@@ -189,7 +194,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
             <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
               p.id === selectedPropertyId ? "bg-white/20" : "bg-stone-100"
             }`}>
-              {DEMO_ROOMS.filter(r => r.property_id === p.id).length} Zimmer
+              {allRooms.filter(r => r.property_id === p.id).length} Zimmer
             </span>
           </button>
         ))}
@@ -350,7 +355,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
                       {/* Booking bars */}
                       {segments.map(({ booking, startIndex, length }) => {
                         const colors = BOOKING_COLORS[booking.status] || BOOKING_COLORS.confirmed
-                        const guest = DEMO_GUESTS.find(g => g.id === booking.guest_id)
+                        const guest = guests.find(g => g.id === booking.guest_id)
                         const nights = length
                         return (
                           <div
@@ -439,9 +444,6 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
         </div>
       </div>
 
-      {/* Tooltip */}
-      {tooltip && <BookingTooltip data={tooltip} />}
-
       {/* Quick stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
@@ -480,6 +482,17 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
           </div>
         ))}
       </div>
+
+      {tooltip && <BookingTooltip data={tooltip} />}
+
+      {showBookingForm && (
+        <BookingForm
+          onClose={() => { setShowBookingForm(false); setPrefillDate(undefined); setPrefillRoomId(undefined) }}
+          prefillPropertyId={selectedPropertyId}
+          prefillRoomId={prefillRoomId}
+          prefillDate={prefillDate}
+        />
+      )}
     </div>
   )
 }
@@ -487,10 +500,11 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
 // ─── Tooltip Component ────────────────────────────────────────────────────────
 
 function BookingTooltip({ data }: { data: TooltipData }) {
+  const { properties, rooms: allRooms, guests } = useStore()
   const { booking, x, y } = data
-  const guest = DEMO_GUESTS.find(g => g.id === booking.guest_id)
-  const property = DEMO_PROPERTIES.find(p => p.id === booking.property_id)
-  const room = DEMO_ROOMS.find(r => r.id === booking.room_id)
+  const guest = guests.find(g => g.id === booking.guest_id)
+  const property = properties.find(p => p.id === booking.property_id)
+  const room = allRooms.find(r => r.id === booking.room_id)
   const colors = BOOKING_COLORS[booking.status] || BOOKING_COLORS.confirmed
   const outstanding = booking.total_amount - booking.paid_amount
 
