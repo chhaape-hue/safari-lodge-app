@@ -68,15 +68,15 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-stone-200 bg-stone-900">
+    <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-[#3D2010]" style={{ background: "linear-gradient(180deg, #2C1A0E 0%, #3D2010 100%)" }}>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-stone-700">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-600">
-          <span className="text-lg">🦁</span>
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-[#5C3A1E]/50">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6B4226] shadow-lg">
+          <span className="text-xl">🦁</span>
         </div>
         <div>
-          <p className="text-sm font-bold text-white leading-tight">Untouched Safaris</p>
-          <p className="text-xs text-stone-400">Lodge Management</p>
+          <p className="text-sm font-bold text-[#F5E6D0] leading-tight">Untouched Safaris</p>
+          <p className="text-xs text-[#A07850]">Lodge Management</p>
         </div>
       </div>
 
@@ -90,10 +90,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors group",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
                 isActive
-                  ? "bg-amber-600 text-white"
-                  : "text-stone-400 hover:bg-stone-800 hover:text-white"
+                  ? "bg-[#C8956B] text-white shadow-md"
+                  : "text-[#C4A882] hover:bg-[#5C3A1E]/60 hover:text-[#F5E6D0]"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -105,8 +105,8 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-stone-700 px-4 py-3">
-        <p className="text-xs text-stone-500 text-center">untouched-safaris.com</p>
+      <div className="border-t border-[#5C3A1E]/50 px-4 py-3">
+        <p className="text-xs text-[#7A5535] text-center">untouched-safaris.com</p>
       </div>
     </aside>
   )
