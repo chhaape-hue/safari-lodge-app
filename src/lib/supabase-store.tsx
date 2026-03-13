@@ -288,36 +288,45 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
   const reload = useCallback(async () => {
     setState(s => ({ ...s, loading: true, error: null }))
     try {
-      const [props, rooms, guests, bookings, costs, staff, stock, maintenance] = await Promise.all([
+      // Phase 1: critical data – show UI as fast as possible
+      const [props, rooms] = await Promise.all([
         supabase.from("properties").select("*").order("name"),
         supabase.from("rooms").select("*").order("room_number"),
-        supabase.from("guests").select("*").order("last_name"),
-        supabase.from("bookings").select("*").order("created_at", { ascending: false }),
-        supabase.from("cost_entries").select("*").order("date", { ascending: false }),
-        supabase.from("staff_members").select("*").order("last_name"),
-        supabase.from("stock_items").select("*").order("name"),
-        supabase.from("maintenance_tasks").select("*").order("created_at", { ascending: false }),
       ])
 
-      // Surface the first error encountered
-      const firstError = [props, rooms, guests, bookings, costs, staff, stock, maintenance].find(r => r.error)
-      if (firstError?.error) throw firstError.error
+      const criticalError = [props, rooms].find(r => r.error)
+      if (criticalError?.error) throw criticalError.error
 
-      setState({
+      setState(s => ({
+        ...s,
         properties: (props.data || []).map(mapProperty),
         rooms: (rooms.data || []).map(mapRoom),
-        guests: (guests.data || []).map(mapGuest),
-        bookings: (bookings.data || []).map(mapBooking),
-        costs: (costs.data || []).map(mapCost),
-        staff: (staff.data || []).map(mapStaff),
-        stockItems: (stock.data || []).map(mapStockItem),
-        maintenanceTasks: (maintenance.data || []).map(mapMaintenanceTask),
         loading: false,
         error: null,
-      })
+      }))
+
+      // Phase 2: secondary data – non-fatal, never blocks the UI
+      const [guests, bookings, costs, staff, stock, maintenance] = await Promise.all([
+        supabase.from("guests").select("*").order("last_name").limit(1000),
+        supabase.from("bookings").select("*").order("created_at", { ascending: false }).limit(500),
+        supabase.from("cost_entries").select("*").order("date", { ascending: false }).limit(500),
+        supabase.from("staff_members").select("*").order("last_name").limit(200),
+        supabase.from("stock_items").select("*").order("name").limit(500),
+        supabase.from("maintenance_tasks").select("*").order("created_at", { ascending: false }).limit(500),
+      ])
+
+      // Ignore individual table errors (e.g. table not yet created) – just skip that data
+      setState(s => ({
+        ...s,
+        guests: guests.error ? s.guests : (guests.data || []).map(mapGuest),
+        bookings: bookings.error ? s.bookings : (bookings.data || []).map(mapBooking),
+        costs: costs.error ? s.costs : (costs.data || []).map(mapCost),
+        staff: staff.error ? s.staff : (staff.data || []).map(mapStaff),
+        stockItems: stock.error ? s.stockItems : (stock.data || []).map(mapStockItem),
+        maintenanceTasks: maintenance.error ? s.maintenanceTasks : (maintenance.data || []).map(mapMaintenanceTask),
+      }))
     } catch (err: unknown) {
       const msg = (err as Error).message || "Failed to load data"
-      // If missing env vars, give a clearer message
       const errorMsg = msg.includes("undefined") || msg.includes("Invalid URL")
         ? "Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file."
         : msg
@@ -325,7 +334,39 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  useEffect(() => { reload() }, [reload])
+  // Only load data once there is an authenticated session.
+  // Using onAuthStateChange ensures we don't fire unauthenticated requests
+  // that would be blocked by RLS before the Supabase client has restored its token.
+  useEffect(() => {
+    let loaded = false
+
+    // Handle initial session (already stored in localStorage)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        loaded = true
+        reload()
+      } else {
+        setState(s => ({ ...s, loading: false }))
+      }
+    })
+
+    // Handle auth state changes (login / logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && !loaded) {
+        loaded = true
+        reload()
+      } else if (!session) {
+        loaded = false
+        setState({
+          properties: [], rooms: [], bookings: [], guests: [], costs: [], staff: [],
+          stockItems: [], maintenanceTasks: [],
+          loading: false, error: null,
+        })
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [reload])
 
   // ── Bookings ──
 

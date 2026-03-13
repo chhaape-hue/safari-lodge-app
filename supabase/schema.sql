@@ -203,37 +203,57 @@ returns boolean language sql stable security definer as $$
 $$;
 
 -- ── RLS Policies ─────────────────────────────────────────────
+-- Drop all policies first so this script is safely re-runnable.
 
 -- Profiles
+drop policy if exists "Own profile" on public.profiles;
+drop policy if exists "Admin sees all profiles" on public.profiles;
+drop policy if exists "Admin manages profiles" on public.profiles;
 create policy "Own profile" on public.profiles for select using (id = auth.uid());
 create policy "Admin sees all profiles" on public.profiles for select using (public.get_my_role() = 'admin');
 create policy "Admin manages profiles" on public.profiles for all using (public.get_my_role() = 'admin');
 
 -- Properties (all authenticated users can read)
+drop policy if exists "Auth users see properties" on public.properties;
+drop policy if exists "Manager+ insert properties" on public.properties;
+drop policy if exists "Manager+ update properties" on public.properties;
+drop policy if exists "Admin delete properties" on public.properties;
 create policy "Auth users see properties" on public.properties for select using (auth.uid() is not null);
 create policy "Manager+ insert properties" on public.properties for insert with check (public.get_my_role() in ('admin', 'manager'));
 create policy "Manager+ update properties" on public.properties for update using (public.get_my_role() in ('admin', 'manager'));
 create policy "Admin delete properties" on public.properties for delete using (public.get_my_role() = 'admin');
 
 -- Rooms
+drop policy if exists "Auth users see rooms" on public.rooms;
+drop policy if exists "Manager+ manage rooms" on public.rooms;
 create policy "Auth users see rooms" on public.rooms for select using (auth.uid() is not null);
 create policy "Manager+ manage rooms" on public.rooms for all using (public.get_my_role() in ('admin', 'manager'));
 
 -- Guests
+drop policy if exists "Staff see guests" on public.guests;
+drop policy if exists "Reception+ manage guests" on public.guests;
 create policy "Staff see guests" on public.guests for select using (auth.uid() is not null);
 create policy "Reception+ manage guests" on public.guests for all using (public.get_my_role() in ('admin', 'manager', 'reception'));
 
 -- Bookings
+drop policy if exists "Staff see bookings" on public.bookings;
+drop policy if exists "Reception+ insert bookings" on public.bookings;
+drop policy if exists "Reception+ update bookings" on public.bookings;
+drop policy if exists "Manager+ delete bookings" on public.bookings;
 create policy "Staff see bookings" on public.bookings for select using (auth.uid() is not null and public.can_access_property(property_id));
 create policy "Reception+ insert bookings" on public.bookings for insert with check (public.get_my_role() in ('admin', 'manager', 'reception'));
 create policy "Reception+ update bookings" on public.bookings for update using (public.get_my_role() in ('admin', 'manager', 'reception'));
 create policy "Manager+ delete bookings" on public.bookings for delete using (public.get_my_role() in ('admin', 'manager'));
 
 -- Costs (finance only)
+drop policy if exists "Finance sees costs" on public.cost_entries;
+drop policy if exists "Finance manage costs" on public.cost_entries;
 create policy "Finance sees costs" on public.cost_entries for select using (public.get_my_role() in ('admin', 'manager', 'accountant'));
 create policy "Finance manage costs" on public.cost_entries for all using (public.get_my_role() in ('admin', 'manager', 'accountant'));
 
 -- Staff (sensitive: salary visible only to managers)
+drop policy if exists "Manager+ sees staff" on public.staff_members;
+drop policy if exists "Manager+ manages staff" on public.staff_members;
 create policy "Manager+ sees staff" on public.staff_members for select using (public.get_my_role() in ('admin', 'manager'));
 create policy "Manager+ manages staff" on public.staff_members for all using (public.get_my_role() in ('admin', 'manager'));
 
@@ -259,6 +279,8 @@ create or replace trigger trg_stock_updated before update on public.stock_items 
 create index if not exists idx_stock_property on public.stock_items(property_id);
 
 alter table public.stock_items enable row level security;
+drop policy if exists "Auth users see stock" on public.stock_items;
+drop policy if exists "Manager+ manage stock" on public.stock_items;
 create policy "Auth users see stock" on public.stock_items for select using (auth.uid() is not null);
 create policy "Manager+ manage stock" on public.stock_items for all using (public.get_my_role() in ('admin', 'manager', 'reception'));
 
@@ -291,11 +313,21 @@ create index if not exists idx_maintenance_property on public.maintenance_tasks(
 create index if not exists idx_maintenance_status   on public.maintenance_tasks(status);
 
 alter table public.maintenance_tasks enable row level security;
+drop policy if exists "Auth users see maintenance" on public.maintenance_tasks;
+drop policy if exists "Auth users manage maintenance" on public.maintenance_tasks;
 create policy "Auth users see maintenance" on public.maintenance_tasks for select using (auth.uid() is not null);
 create policy "Auth users manage maintenance" on public.maintenance_tasks for all using (auth.uid() is not null);
 
 -- ============================================================
--- DONE. Now run:
---   1. Insert your user into profiles (see next query)
---   2. update profiles set role = 'admin' where email = 'your@email.com';
+-- DONE. After running this script, set up your admin user:
+--
+-- Option A – user already exists in auth.users (logged in before):
+--   INSERT INTO public.profiles (id, email, full_name, role)
+--   SELECT id, email, email, 'admin'
+--   FROM auth.users
+--   ON CONFLICT (id) DO UPDATE SET role = 'admin';
+--
+-- Option B – update existing profile row:
+--   UPDATE public.profiles SET role = 'admin'
+--   WHERE email = 'your@email.com';
 -- ============================================================
