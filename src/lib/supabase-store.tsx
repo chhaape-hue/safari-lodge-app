@@ -305,7 +305,7 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
         error: null,
       }))
 
-      // Phase 2: secondary data – load in background without blocking UI
+      // Phase 2: secondary data – non-fatal, never blocks the UI
       const [guests, bookings, costs, staff, stock, maintenance] = await Promise.all([
         supabase.from("guests").select("*").order("last_name").limit(1000),
         supabase.from("bookings").select("*").order("created_at", { ascending: false }).limit(500),
@@ -315,14 +315,15 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
         supabase.from("maintenance_tasks").select("*").order("created_at", { ascending: false }).limit(500),
       ])
 
+      // Ignore individual table errors (e.g. table not yet created) – just skip that data
       setState(s => ({
         ...s,
-        guests: (guests.data || []).map(mapGuest),
-        bookings: (bookings.data || []).map(mapBooking),
-        costs: (costs.data || []).map(mapCost),
-        staff: (staff.data || []).map(mapStaff),
-        stockItems: (stock.data || []).map(mapStockItem),
-        maintenanceTasks: (maintenance.data || []).map(mapMaintenanceTask),
+        guests: guests.error ? s.guests : (guests.data || []).map(mapGuest),
+        bookings: bookings.error ? s.bookings : (bookings.data || []).map(mapBooking),
+        costs: costs.error ? s.costs : (costs.data || []).map(mapCost),
+        staff: staff.error ? s.staff : (staff.data || []).map(mapStaff),
+        stockItems: stock.error ? s.stockItems : (stock.data || []).map(mapStockItem),
+        maintenanceTasks: maintenance.error ? s.maintenanceTasks : (maintenance.data || []).map(mapMaintenanceTask),
       }))
     } catch (err: unknown) {
       const msg = (err as Error).message || "Failed to load data"
