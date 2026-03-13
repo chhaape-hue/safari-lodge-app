@@ -12,18 +12,18 @@ import { DollarSign, Plus, Users, ShoppingCart, Truck, Wrench, Zap, Megaphone, T
 import type { CostCategory } from "@/types"
 
 const categoryConfig: Record<CostCategory, { label: string; icon: React.ReactNode; color: string }> = {
-  staff:         { label: "Personal",            icon: <Users className="h-3.5 w-3.5" />,       color: "bg-blue-100 text-blue-700" },
-  food_beverage: { label: "Lebensmittel",         icon: <ShoppingCart className="h-3.5 w-3.5" />, color: "bg-green-100 text-green-700" },
-  logistics:     { label: "Logistik",             icon: <Truck className="h-3.5 w-3.5" />,        color: "bg-amber-100 text-amber-700" },
-  maintenance:   { label: "Wartung",              icon: <Wrench className="h-3.5 w-3.5" />,       color: "bg-orange-100 text-orange-700" },
-  utilities:     { label: "Energie",              icon: <Zap className="h-3.5 w-3.5" />,          color: "bg-yellow-100 text-yellow-700" },
-  marketing:     { label: "Marketing",            icon: <Megaphone className="h-3.5 w-3.5" />,    color: "bg-purple-100 text-purple-700" },
-  insurance:     { label: "Versicherung",         icon: <DollarSign className="h-3.5 w-3.5" />,   color: "bg-stone-100 text-stone-700" },
-  other:         { label: "Sonstiges",            icon: <DollarSign className="h-3.5 w-3.5" />,   color: "bg-stone-100 text-stone-600" },
+  staff:         { label: "Staff",          icon: <Users className="h-3.5 w-3.5" />,       color: "bg-blue-100 text-blue-700" },
+  food_beverage: { label: "Food & Beverage", icon: <ShoppingCart className="h-3.5 w-3.5" />, color: "bg-green-100 text-green-700" },
+  logistics:     { label: "Logistics",      icon: <Truck className="h-3.5 w-3.5" />,        color: "bg-amber-100 text-amber-700" },
+  maintenance:   { label: "Maintenance",    icon: <Wrench className="h-3.5 w-3.5" />,       color: "bg-orange-100 text-orange-700" },
+  utilities:     { label: "Utilities",      icon: <Zap className="h-3.5 w-3.5" />,          color: "bg-yellow-100 text-yellow-700" },
+  marketing:     { label: "Marketing",      icon: <Megaphone className="h-3.5 w-3.5" />,    color: "bg-purple-100 text-purple-700" },
+  insurance:     { label: "Insurance",      icon: <DollarSign className="h-3.5 w-3.5" />,   color: "bg-stone-100 text-stone-700" },
+  other:         { label: "Other",          icon: <DollarSign className="h-3.5 w-3.5" />,   color: "bg-stone-100 text-stone-600" },
 }
 
 const frequencyLabel: Record<string, string> = {
-  once: "Einmalig", daily: "Täglich", weekly: "Wöchentlich", monthly: "Monatlich", annually: "Jährlich",
+  once: "One-time", daily: "Daily", weekly: "Weekly", monthly: "Monthly", annually: "Annually",
 }
 
 export default function CostsPage() {
@@ -48,19 +48,19 @@ export default function CostsPage() {
 
   return (
     <div>
-      <Topbar title="Kosten & Finanzen" subtitle={`${costs.length} Einträge`}
-        actions={<Button size="sm" onClick={() => setShowForm(true)}><Plus className="h-3.5 w-3.5" />Kosten eintragen</Button>}
+      <Topbar title="Costs & Finance" subtitle={`${costs.length} entries`}
+        actions={<Button size="sm" onClick={() => setShowForm(true)}><Plus className="h-3.5 w-3.5" />Add Cost Entry</Button>}
       />
       <div className="p-6 space-y-5">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Gesamtkosten" value={formatCurrency(grandTotal)} icon={DollarSign} color="rose" />
-          <StatCard title="Personal" value={formatCurrency(staffCosts)} subtitle={grandTotal ? `${((staffCosts/grandTotal)*100).toFixed(0)}%` : ""} icon={Users} color="blue" />
-          <StatCard title="Lebensmittel" value={formatCurrency(foodCosts)} icon={ShoppingCart} color="green" />
-          <StatCard title="Einträge gesamt" value={costs.length} icon={DollarSign} color="amber" />
+          <StatCard title="Total Costs" value={formatCurrency(grandTotal)} icon={DollarSign} color="rose" />
+          <StatCard title="Staff" value={formatCurrency(staffCosts)} subtitle={grandTotal ? `${((staffCosts/grandTotal)*100).toFixed(0)}%` : ""} icon={Users} color="blue" />
+          <StatCard title="Food & Beverage" value={formatCurrency(foodCosts)} icon={ShoppingCart} color="green" />
+          <StatCard title="Total Entries" value={costs.length} icon={DollarSign} color="amber" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card>
-            <CardHeader><CardTitle>Nach Kategorie</CardTitle></CardHeader>
+            <CardHeader><CardTitle>By Category</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {(Object.entries(categoryTotals) as [CostCategory, number][]).sort((a,b) => b[1]-a[1]).map(([cat, amount]) => {
                 const cfg = categoryConfig[cat]
@@ -79,19 +79,19 @@ export default function CostsPage() {
                   </div>
                 )
               })}
-              {costs.length === 0 && <p className="text-sm text-stone-400 text-center py-4">Noch keine Einträge</p>}
+              {costs.length === 0 && <p className="text-sm text-stone-400 text-center py-4">No entries yet</p>}
             </CardContent>
           </Card>
           <div className="lg:col-span-2 space-y-3">
             <div className="flex gap-2 flex-wrap">
               <select value={propertyFilter} onChange={e => setPropertyFilter(e.target.value)}
                 className="text-sm border border-stone-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B4226]">
-                <option value="all">Alle Properties</option>
+                <option value="all">All Properties</option>
                 {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
               <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
                 className="text-sm border border-stone-300 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#6B4226]">
-                <option value="all">Alle Kategorien</option>
+                <option value="all">All Categories</option>
                 {(Object.entries(categoryConfig) as [CostCategory, typeof categoryConfig[CostCategory]][]).map(([k, c]) => (
                   <option key={k} value={k}>{c.label}</option>
                 ))}
@@ -102,7 +102,7 @@ export default function CostsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-stone-100 text-xs text-stone-500 uppercase tracking-wider">
-                      {["Datum","Beschreibung","Kategorie","Property","Frequenz","Betrag",""].map(h => (
+                      {["Date","Description","Category","Property","Frequency","Amount",""].map(h => (
                         <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
                       ))}
                     </tr>
@@ -127,7 +127,7 @@ export default function CostsPage() {
                           <td className="px-4 py-3 text-xs text-stone-500">{frequencyLabel[cost.frequency]}</td>
                           <td className="px-4 py-3 font-semibold text-stone-900 whitespace-nowrap">{formatCurrency(cost.amount, cost.currency)}</td>
                           <td className="px-4 py-3">
-                            <button onClick={() => { if(confirm("Eintrag löschen?")) deleteCost(cost.id) }}
+                            <button onClick={() => { if(confirm("Delete this entry?")) deleteCost(cost.id) }}
                               className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -137,7 +137,7 @@ export default function CostsPage() {
                     })}
                     {filtered.length > 0 && (
                       <tr className="bg-stone-50 font-semibold">
-                        <td colSpan={5} className="px-4 py-3 text-right text-stone-600">Gesamt:</td>
+                        <td colSpan={5} className="px-4 py-3 text-right text-stone-600">Total:</td>
                         <td className="px-4 py-3 text-stone-900">{formatCurrency(filtered.reduce((s,c) => s+c.amount, 0))}</td>
                         <td />
                       </tr>
@@ -146,9 +146,9 @@ export default function CostsPage() {
                 </table>
                 {filtered.length === 0 && (
                   <div className="text-center py-12 text-stone-400">
-                    <p className="text-sm">Noch keine Kosten eingetragen</p>
+                    <p className="text-sm">No cost entries yet</p>
                     <Button size="sm" className="mt-4" onClick={() => setShowForm(true)}>
-                      <Plus className="h-3.5 w-3.5" /> Ersten Eintrag erstellen
+                      <Plus className="h-3.5 w-3.5" /> Create first entry
                     </Button>
                   </div>
                 )}

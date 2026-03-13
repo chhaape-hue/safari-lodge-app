@@ -10,14 +10,14 @@ import { formatCurrency } from "@/lib/utils"
 import { BarChart3, TrendingUp, DollarSign, Calendar } from "lucide-react"
 
 const costCategoryLabels: Record<string, string> = {
-  staff: "Personal",
-  food_beverage: "Lebensmittel",
-  logistics: "Logistik",
-  maintenance: "Wartung",
-  utilities: "Nebenkosten",
+  staff: "Staff",
+  food_beverage: "Food & Beverage",
+  logistics: "Logistics",
+  maintenance: "Maintenance",
+  utilities: "Utilities",
   marketing: "Marketing",
-  insurance: "Versicherung",
-  other: "Sonstiges",
+  insurance: "Insurance",
+  other: "Other",
 }
 
 export default function ReportsPage() {
@@ -26,7 +26,7 @@ export default function ReportsPage() {
   const today = new Date()
   const currentMonth = today.getMonth()
   const currentYear = today.getFullYear()
-  const monthLabel = today.toLocaleDateString("de-DE", { month: "long", year: "numeric" })
+  const monthLabel = today.toLocaleDateString("en-GB", { month: "long", year: "numeric" })
 
   const monthBookings = useMemo(() =>
     bookings.filter(b => {
@@ -126,34 +126,34 @@ export default function ReportsPage() {
   return (
     <div>
       <Topbar
-        title="Berichte & Auswertungen"
-        subtitle="Finanzübersicht und KPIs"
+        title="Reports & Analytics"
+        subtitle="Financial overview and key performance indicators"
       />
 
       <div className="p-6 space-y-6">
         {/* KPIs */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title={`Umsatz (${monthLabel})`}
+            title={`Revenue (${monthLabel})`}
             value={formatCurrency(revenueThisMonth)}
             icon={TrendingUp}
             color="green"
           />
           <StatCard
-            title={`Gesamtkosten (${monthLabel})`}
+            title={`Total Costs (${monthLabel})`}
             value={formatCurrency(costsThisMonth)}
             icon={DollarSign}
             color="rose"
           />
           <StatCard
-            title={`Nettogewinn (${monthLabel})`}
+            title={`Net Profit (${monthLabel})`}
             value={formatCurrency(netProfit)}
-            subtitle={`Marge: ${profitMargin}%`}
+            subtitle={`Margin: ${profitMargin}%`}
             icon={BarChart3}
             color="amber"
           />
           <StatCard
-            title={`Auslastung (${monthLabel})`}
+            title={`Occupancy (${monthLabel})`}
             value={`${occupancyRate}%`}
             icon={Calendar}
             color="blue"
@@ -164,11 +164,11 @@ export default function ReportsPage() {
           {/* Revenue by Property */}
           <Card>
             <CardHeader>
-              <CardTitle>Umsatz nach Property</CardTitle>
+              <CardTitle>Revenue by Property</CardTitle>
             </CardHeader>
             <CardContent>
               {revenueByProperty.length === 0 ? (
-                <p className="text-sm text-stone-500 text-center py-4">Keine Daten verfügbar</p>
+                <p className="text-sm text-stone-500 text-center py-4">No data available</p>
               ) : (
                 <div className="space-y-4">
                   {revenueByProperty.map(item => (
@@ -186,7 +186,7 @@ export default function ReportsPage() {
                             style={{ width: `${(item.revenue / maxPropertyRevenue) * 100}%` }}
                           />
                         </div>
-                        <span className="text-xs text-stone-400">{item.bookings} Buchungen</span>
+                        <span className="text-xs text-stone-400">{item.bookings} bookings</span>
                       </div>
                     </div>
                   ))}
@@ -197,15 +197,15 @@ export default function ReportsPage() {
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-lg font-bold text-stone-900">{formatCurrency(revenueThisMonth)}</p>
-                    <p className="text-xs text-stone-500">Gesamtumsatz</p>
+                    <p className="text-xs text-stone-500">Total Revenue</p>
                   </div>
                   <div>
                     <p className="text-lg font-bold text-stone-900">{monthBookings.length}</p>
-                    <p className="text-xs text-stone-500">Buchungen</p>
+                    <p className="text-xs text-stone-500">Bookings</p>
                   </div>
                   <div>
                     <p className="text-lg font-bold text-green-700">{profitMargin}%</p>
-                    <p className="text-xs text-stone-500">Marge</p>
+                    <p className="text-xs text-stone-500">Margin</p>
                   </div>
                 </div>
               </div>
@@ -215,11 +215,11 @@ export default function ReportsPage() {
           {/* Costs by Category */}
           <Card>
             <CardHeader>
-              <CardTitle>Kosten nach Kategorie</CardTitle>
+              <CardTitle>Costs by Category</CardTitle>
             </CardHeader>
             <CardContent>
               {costsByCategory.length === 0 ? (
-                <p className="text-sm text-stone-500 text-center py-4">Keine Kosten diesen Monat</p>
+                <p className="text-sm text-stone-500 text-center py-4">No costs this month</p>
               ) : (
                 <div className="space-y-3">
                   {costsByCategory.map(([cat, amount]) => (
@@ -237,7 +237,7 @@ export default function ReportsPage() {
                     </div>
                   ))}
                   <div className="border-t border-stone-100 pt-2 flex justify-between text-sm font-semibold">
-                    <span>Gesamt</span>
+                    <span>Total</span>
                     <span>{formatCurrency(costsThisMonth)}</span>
                   </div>
                 </div>
@@ -249,11 +249,11 @@ export default function ReportsPage() {
         {/* Occupancy by Property */}
         <Card>
           <CardHeader>
-            <CardTitle>Auslastung nach Property – {monthLabel}</CardTitle>
+            <CardTitle>Occupancy by Property – {monthLabel}</CardTitle>
           </CardHeader>
           <CardContent>
             {occupancyByProperty.length === 0 ? (
-              <p className="text-sm text-stone-500 text-center py-4">Keine Properties vorhanden</p>
+              <p className="text-sm text-stone-500 text-center py-4">No properties found</p>
             ) : (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {occupancyByProperty.map(item => (

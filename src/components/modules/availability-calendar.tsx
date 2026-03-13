@@ -21,11 +21,11 @@ const BOOKING_COLORS: Record<string, { bg: string; text: string; border: string 
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  confirmed:   "Bestätigt",
-  checked_in:  "Eingecheckt",
-  checked_out: "Ausgecheckt",
-  pending:     "Ausstehend",
-  cancelled:   "Storniert",
+  confirmed:   "Confirmed",
+  checked_in:  "Checked In",
+  checked_out: "Checked Out",
+  pending:     "Pending",
+  cancelled:   "Cancelled",
   no_show:     "No-Show",
 }
 
@@ -56,8 +56,8 @@ function isWeekend(date: Date): boolean {
   return date.getDay() === 0 || date.getDay() === 6
 }
 
-const DAY_NAMES_SHORT = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
-const MONTH_NAMES = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
@@ -194,7 +194,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
             <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
               p.id === selectedPropertyId ? "bg-white/20" : "bg-stone-100"
             }`}>
-              {allRooms.filter(r => r.property_id === p.id).length} Zimmer
+              {allRooms.filter(r => r.property_id === p.id).length} rooms
             </span>
           </button>
         ))}
@@ -216,7 +216,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
               onClick={goToToday}
               className="px-3 py-1 text-xs font-medium rounded-lg bg-white border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors"
             >
-              Heute
+              Today
             </button>
             <button
               onClick={() => navigate(1)}
@@ -239,7 +239,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
             ))}
             <div className="flex items-center gap-1">
               <div className="h-3 w-5 rounded-sm bg-[#E8F4EC] border border-[#4A7C59]/20" />
-              <span className="text-stone-500">Frei</span>
+              <span className="text-stone-500">Free</span>
             </div>
           </div>
         </div>
@@ -269,7 +269,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
                 className="shrink-0 px-3 py-2 bg-[#FAF7F2] border-r border-stone-200"
               >
                 <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                  Zimmer
+                  Rooms
                 </span>
               </div>
               {days.map((day, i) => {
@@ -301,7 +301,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
             {/* Room rows */}
             {rooms.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-stone-400 text-sm">
-                Keine Zimmer für diese Property angelegt.
+                No rooms added for this property yet.
               </div>
             ) : (
               rooms.map((room, roomIdx) => {
@@ -327,7 +327,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-stone-800 truncate">{room.name}</p>
                         <p className="text-[11px] text-stone-400">
-                          #{room.room_number} · {room.capacity} Pers. · {formatCurrency(room.base_price_per_night)}/N
+                          #{room.room_number} · {room.capacity} guests · {formatCurrency(room.base_price_per_night)}/N
                         </p>
                       </div>
                     </div>
@@ -412,7 +412,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
                 style={{ width: 200 }}
                 className="shrink-0 flex items-center px-3 border-r border-stone-200"
               >
-                <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">Frei</span>
+                <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider">Free</span>
               </div>
               {days.map((day, i) => {
                 const dayStr = toDateStr(day)
@@ -448,12 +448,12 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           {
-            label: "Zimmer gesamt",
+            label: "Total Rooms",
             value: rooms.length,
             color: "text-stone-800",
           },
           {
-            label: "Heute belegt",
+            label: "Occupied Today",
             value: rooms.filter(r =>
               bookingsByRoom[r.id]?.some(b =>
                 b.check_in <= toDateStr(new Date()) && b.check_out > toDateStr(new Date())
@@ -462,7 +462,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
             color: "text-[#C8956B]",
           },
           {
-            label: "Heute frei",
+            label: "Available Today",
             value: rooms.filter(r =>
               !bookingsByRoom[r.id]?.some(b =>
                 b.check_in <= toDateStr(new Date()) && b.check_out > toDateStr(new Date())
@@ -471,7 +471,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
             color: "text-[#4A7C59]",
           },
           {
-            label: "In Wartung",
+            label: "Under Maintenance",
             value: rooms.filter(r => r.status === "maintenance").length,
             color: "text-red-500",
           },
@@ -522,7 +522,7 @@ function BookingTooltip({ data }: { data: TooltipData }) {
         </div>
         <div className="space-y-1 text-xs text-stone-300">
           <div className="flex justify-between">
-            <span>Zimmer</span>
+            <span>Room</span>
             <span className="text-white font-medium">{room?.name}</span>
           </div>
           <div className="flex justify-between">
@@ -534,20 +534,20 @@ function BookingTooltip({ data }: { data: TooltipData }) {
             <span className="text-white">{booking.check_out}</span>
           </div>
           <div className="flex justify-between">
-            <span>Gäste</span>
-            <span className="text-white">{booking.adults} Erw. {booking.children > 0 ? `· ${booking.children} Kinder` : ""}</span>
+            <span>Guests</span>
+            <span className="text-white">{booking.adults} adults {booking.children > 0 ? `· ${booking.children} children` : ""}</span>
           </div>
           <div className="flex justify-between">
-            <span>Referenz</span>
+            <span>Reference</span>
             <span className="text-white font-mono">{booking.booking_reference}</span>
           </div>
           <div className="border-t border-stone-700 pt-1 mt-1 flex justify-between">
-            <span>Gesamtbetrag</span>
+            <span>Total</span>
             <span className="text-white font-bold">{formatCurrency(booking.total_amount)}</span>
           </div>
           {outstanding > 0 && (
             <div className="flex justify-between text-amber-400">
-              <span>Ausstehend</span>
+              <span>Outstanding</span>
               <span className="font-bold">{formatCurrency(outstanding)}</span>
             </div>
           )}

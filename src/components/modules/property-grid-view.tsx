@@ -12,28 +12,28 @@ import { MapPin, BedDouble, Plus, Settings2, Trash2, Pencil, ToggleLeft, ToggleR
 import type { PropertyType, RoomStatus, Room } from "@/types"
 
 const propertyTypeLabel: Record<string, string> = {
-  lodge: "Safari Lodge", houseboat: "Hausboot", camp: "Camp", villa: "Villa", hotel: "Hotel",
+  lodge: "Safari Lodge", houseboat: "Houseboat", camp: "Camp", villa: "Villa", hotel: "Hotel",
 }
 const propertyTypeIcon: Record<string, string> = {
   lodge: "🏕️", houseboat: "🚢", camp: "⛺", villa: "🏡", hotel: "🏨",
 }
 
 const propertyStatusConfig = {
-  active:      { label: "Aktiv",       variant: "success" as const },
-  maintenance: { label: "Wartung",     variant: "warning" as const },
-  inactive:    { label: "Inaktiv",     variant: "neutral" as const },
+  active:      { label: "Active",      variant: "success" as const },
+  maintenance: { label: "Maintenance", variant: "warning" as const },
+  inactive:    { label: "Inactive",    variant: "neutral" as const },
 }
 
 const roomStatusConfig: Record<RoomStatus, { label: string; dot: string; badge: "success" | "warning" | "danger" | "neutral" }> = {
-  available:   { label: "Frei",     dot: "bg-[#4A7C59]", badge: "success" },
-  occupied:    { label: "Belegt",   dot: "bg-[#C8956B]", badge: "warning" },
-  maintenance: { label: "Wartung",  dot: "bg-red-400",   badge: "danger" },
-  blocked:     { label: "Gesperrt", dot: "bg-stone-300", badge: "neutral" },
+  available:   { label: "Available",   dot: "bg-[#4A7C59]", badge: "success" },
+  occupied:    { label: "Occupied",    dot: "bg-[#C8956B]", badge: "warning" },
+  maintenance: { label: "Maintenance", dot: "bg-red-400",   badge: "danger" },
+  blocked:     { label: "Blocked",     dot: "bg-stone-300", badge: "neutral" },
 }
 
 const roomTypeLabel: Record<string, string> = {
-  tent: "Zelt", suite: "Suite", standard: "Standard",
-  family: "Familie", honeymoon: "Honeymoon", dormitory: "Schlafsaal",
+  tent: "Safari Tent", suite: "Suite", standard: "Standard",
+  family: "Family", honeymoon: "Honeymoon", dormitory: "Dormitory",
 }
 
 const ROOM_STATUS_CYCLE: RoomStatus[] = ["available", "occupied", "maintenance", "blocked"]
@@ -74,7 +74,7 @@ export function PropertyGridView() {
               {properties.length} Properties
             </p>
             <Button size="sm" variant="secondary" onClick={() => setShowPropertyForm(true)}>
-              <Plus className="h-3.5 w-3.5" /> Neu
+              <Plus className="h-3.5 w-3.5" /> New
             </Button>
           </div>
 
@@ -101,7 +101,7 @@ export function PropertyGridView() {
                           {/* Status toggle */}
                           <button
                             onClick={e => { e.stopPropagation(); togglePropertyStatus(property.id, property.status) }}
-                            title={property.status === "active" ? "Auf Wartung setzen" : "Aktivieren"}
+                            title={property.status === "active" ? "Set to Maintenance" : "Activate"}
                             className="p-1 rounded hover:bg-stone-100 transition-colors"
                           >
                             {property.status === "active"
@@ -123,9 +123,9 @@ export function PropertyGridView() {
                             <div className="bg-stone-200 rounded-full flex-1" />
                           </div>
                           <div className="flex gap-3 text-[11px] text-stone-400">
-                            <span><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C8956B] mr-1" />{occupied} belegt</span>
-                            <span><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#4A7C59] mr-1" />{available} frei</span>
-                            <span className="ml-auto">{rooms.length} Zimmer</span>
+                            <span><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C8956B] mr-1" />{occupied} occupied</span>
+                            <span><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#4A7C59] mr-1" />{available} free</span>
+                            <span className="ml-auto">{rooms.length} rooms</span>
                           </div>
                         </div>
                       )}
@@ -138,9 +138,9 @@ export function PropertyGridView() {
 
           {properties.length === 0 && (
             <div className="text-center py-10 text-stone-400 border-2 border-dashed border-stone-200 rounded-xl">
-              <p className="text-sm">Noch keine Properties</p>
+              <p className="text-sm">No properties yet</p>
               <Button size="sm" className="mt-3" onClick={() => setShowPropertyForm(true)}>
-                <Plus className="h-3.5 w-3.5" /> Erste anlegen
+                <Plus className="h-3.5 w-3.5" /> Add First Property
               </Button>
             </div>
           )}
@@ -170,12 +170,12 @@ export function PropertyGridView() {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <Button variant="secondary" size="sm" onClick={() => { setShowRoomForm(true); setEditRoom(undefined) }}>
-                      <Plus className="h-3.5 w-3.5" /> Zimmer
+                      <Plus className="h-3.5 w-3.5" /> Add Room
                     </Button>
                     <button
-                      onClick={() => { if (confirm(`Property "${selectedProp.name}" wirklich löschen?`)) { deleteProperty(selectedProp.id); setSelectedPropertyId(null) } }}
+                      onClick={() => { if (confirm(`Delete property "${selectedProp.name}"?`)) { deleteProperty(selectedProp.id); setSelectedPropertyId(null) } }}
                       className="p-2 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
-                      title="Property löschen"
+                      title="Delete property"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -221,23 +221,23 @@ export function PropertyGridView() {
                         <div className="mt-3 pt-3 border-t border-stone-50 flex items-center justify-between">
                           <span className="text-sm font-bold text-[#6B4226]">
                             {formatCurrency(room.base_price_per_night, selectedProp.currency)}
-                            <span className="text-xs font-normal text-stone-400"> / Nacht</span>
+                            <span className="text-xs font-normal text-stone-400"> / night</span>
                           </span>
                           <div className="flex gap-1">
                             {/* Status cycle button */}
                             <button
                               onClick={() => cycleRoomStatus(room)}
-                              title={`Status: ${sc.label} → weiterschalten`}
+                              title={`Status: ${sc.label} → cycle next`}
                               className="px-2 py-1 text-xs rounded-lg border border-stone-200 text-stone-500 hover:border-[#6B4226] hover:text-[#6B4226] transition-colors"
                             >
                               Status ↻
                             </button>
                             <button onClick={() => { setEditRoom(room); setShowRoomForm(true) }}
-                              className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors" title="Bearbeiten">
+                              className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors" title="Edit">
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
-                            <button onClick={() => { if (confirm(`Zimmer "${room.name}" löschen?`)) deleteRoom(room.id) }}
-                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors" title="Löschen">
+                            <button onClick={() => { if (confirm(`Delete room "${room.name}"?`)) deleteRoom(room.id) }}
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors" title="Delete">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
@@ -246,7 +246,7 @@ export function PropertyGridView() {
                         {room.status === "maintenance" && (
                           <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-600 bg-orange-50 rounded-lg px-2 py-1.5">
                             <AlertTriangle className="h-3 w-3 shrink-0" />
-                            Zimmer in Wartung — nicht buchbar
+                            Room under maintenance — not bookable
                           </div>
                         )}
                       </div>
@@ -256,9 +256,9 @@ export function PropertyGridView() {
               ) : (
                 <div className="flex flex-col items-center justify-center h-40 text-stone-400 border-2 border-dashed border-stone-200 rounded-xl">
                   <BedDouble className="h-8 w-8 mb-2" />
-                  <p className="text-sm">Noch keine Zimmer angelegt</p>
+                  <p className="text-sm">No rooms added yet</p>
                   <Button size="sm" className="mt-3" onClick={() => { setShowRoomForm(true); setEditRoom(undefined) }}>
-                    <Plus className="h-3.5 w-3.5" /> Erstes Zimmer anlegen
+                    <Plus className="h-3.5 w-3.5" /> Add First Room
                   </Button>
                 </div>
               )}
@@ -266,8 +266,8 @@ export function PropertyGridView() {
           ) : (
             <div className="flex flex-col items-center justify-center h-64 text-stone-400 border-2 border-dashed border-stone-200 rounded-xl">
               <BedDouble className="h-10 w-10 mb-3" />
-              <p className="text-sm font-medium">Property auswählen</p>
-              <p className="text-xs mt-1">Links auf eine Property klicken</p>
+              <p className="text-sm font-medium">Select a Property</p>
+              <p className="text-xs mt-1">Click on a property on the left</p>
             </div>
           )}
         </div>

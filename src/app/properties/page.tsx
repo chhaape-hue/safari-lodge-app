@@ -24,8 +24,8 @@ export default function PropertiesPage() {
   return (
     <div>
       <Topbar
-        title="Properties & Verfügbarkeit"
-        subtitle="Zimmer, Belegung und Buchungskalender"
+        title="Properties & Availability"
+        subtitle="Rooms, occupancy and booking calendar"
         actions={
           <div className="flex items-center gap-2">
             <div className="flex rounded-lg border border-stone-300 overflow-hidden">
@@ -38,7 +38,7 @@ export default function PropertiesPage() {
                 }`}
               >
                 <CalendarDays className="h-3.5 w-3.5" />
-                Kalender
+                Calendar
               </button>
               <button
                 onClick={() => setView("grid")}
@@ -49,13 +49,13 @@ export default function PropertiesPage() {
                 }`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
-                Übersicht
+                Overview
               </button>
             </div>
             <Link href="/bookings/new">
               <Button size="sm">
                 <Plus className="h-3.5 w-3.5" />
-                Neue Buchung
+                New Booking
               </Button>
             </Link>
           </div>
@@ -69,7 +69,7 @@ export default function PropertiesPage() {
             onPropertyChange={setSelectedPropertyId}
           />
         ) : (
-          <div className="p-12 text-center text-stone-500 text-sm">Lade Properties...</div>
+          <div className="p-12 text-center text-stone-500 text-sm">Loading properties...</div>
         )
       ) : (
         <PropertyGridView />

@@ -237,6 +237,63 @@ create policy "Finance manage costs" on public.cost_entries for all using (publi
 create policy "Manager+ sees staff" on public.staff_members for select using (public.get_my_role() in ('admin', 'manager'));
 create policy "Manager+ manages staff" on public.staff_members for all using (public.get_my_role() in ('admin', 'manager'));
 
+-- ── Stock Items ────────────────────────────────────────────────────────────
+create table if not exists public.stock_items (
+  id           uuid primary key default uuid_generate_v4(),
+  property_id  uuid references public.properties(id) on delete set null,
+  name         text not null,
+  category     text not null default 'Other',
+  unit         text not null default 'unit',
+  current_qty  numeric(10,2) not null default 0,
+  minimum_qty  numeric(10,2) not null default 0,
+  reorder_qty  numeric(10,2) not null default 0,
+  unit_cost    numeric(10,2) not null default 0,
+  supplier     text,
+  notes        text,
+  last_updated date not null default current_date,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create or replace trigger trg_stock_updated before update on public.stock_items for each row execute function public.update_updated_at();
+create index if not exists idx_stock_property on public.stock_items(property_id);
+
+alter table public.stock_items enable row level security;
+create policy "Auth users see stock" on public.stock_items for select using (auth.uid() is not null);
+create policy "Manager+ manage stock" on public.stock_items for all using (public.get_my_role() in ('admin', 'manager', 'reception'));
+
+-- ── Maintenance Tasks ──────────────────────────────────────────────────────
+create table if not exists public.maintenance_tasks (
+  id             uuid primary key default uuid_generate_v4(),
+  property_id    uuid references public.properties(id) on delete set null,
+  title          text not null,
+  description    text,
+  category       text not null default 'other'
+                   check (category in ('vehicle','building','electrical','plumbing','equipment','other')),
+  priority       text not null default 'medium'
+                   check (priority in ('critical','high','medium','low')),
+  status         text not null default 'open'
+                   check (status in ('open','in_progress','completed','deferred')),
+  location       text,
+  reported_by    text,
+  assigned_to    text,
+  due_date       date,
+  completed_at   timestamptz,
+  estimated_cost numeric(10,2),
+  actual_cost    numeric(10,2),
+  notes          text,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+create or replace trigger trg_maintenance_updated before update on public.maintenance_tasks for each row execute function public.update_updated_at();
+create index if not exists idx_maintenance_property on public.maintenance_tasks(property_id);
+create index if not exists idx_maintenance_status   on public.maintenance_tasks(status);
+
+alter table public.maintenance_tasks enable row level security;
+create policy "Auth users see maintenance" on public.maintenance_tasks for select using (auth.uid() is not null);
+create policy "Auth users manage maintenance" on public.maintenance_tasks for all using (auth.uid() is not null);
+
 -- ============================================================
 -- DONE. Now run:
 --   1. Insert your user into profiles (see next query)
