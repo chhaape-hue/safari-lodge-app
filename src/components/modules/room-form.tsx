@@ -74,7 +74,7 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
     return Object.keys(e).length === 0
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return
     setSaving(true)
     const data = {
@@ -95,7 +95,7 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
     if (isEdit && room) {
       updateRoom(room.id, data)
     } else {
-      addRoom(data)
+      await addRoom(data)
     }
     onClose()
   }

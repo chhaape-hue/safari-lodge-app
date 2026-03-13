@@ -94,10 +94,10 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
     try {
       let guestId = existingGuestId
       if (guestMode === "new") {
-        const guest = addGuest({ first_name: firstName, last_name: lastName, email, phone, nationality })
+        const guest = await addGuest({ first_name: firstName, last_name: lastName, email, phone, nationality })
         guestId = guest.id
       }
-      addBooking({
+      await addBooking({
         property_id: propertyId,
         room_id: roomId,
         guest_id: guestId,

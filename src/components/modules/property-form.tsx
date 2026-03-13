@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useStore } from "@/lib/store"
 import { Button } from "@/components/ui/button"
+import type { PropertyStatus } from "@/types"
 import { X } from "lucide-react"
 import type { Property, PropertyType } from "@/types"
 
@@ -22,7 +23,7 @@ const propertyTypes: { value: PropertyType; label: string; icon: string }[] = [
 const CURRENCY_OPTIONS = ["BWP", "NAD", "ZAR", "USD", "EUR"]
 
 export function PropertyForm({ property, onClose }: Props) {
-  const { addProperty, updateRoom } = useStore()
+  const { addProperty } = useStore()
   const isEdit = Boolean(property)
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -57,7 +58,7 @@ export function PropertyForm({ property, onClose }: Props) {
     return Object.keys(e).length === 0
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return
     setSaving(true)
     const data = {
@@ -78,7 +79,7 @@ export function PropertyForm({ property, onClose }: Props) {
       longitude: longitude ? parseFloat(longitude) : undefined,
     }
     // Note: updateProperty will be added when needed; for now only add is supported
-    addProperty(data)
+    await addProperty(data)
     onClose()
   }
 
@@ -150,7 +151,7 @@ export function PropertyForm({ property, onClose }: Props) {
             </div>
             <div>
               <label className={labelCls}>Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} className={inputCls()}>
+              <select value={status} onChange={e => setStatus(e.target.value as PropertyStatus)} className={inputCls()}>
                 <option value="active">Aktiv</option>
                 <option value="inactive">Inaktiv</option>
                 <option value="maintenance">Wartung</option>

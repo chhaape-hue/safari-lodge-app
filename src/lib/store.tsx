@@ -243,9 +243,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
+// Re-exports useSupabaseStore as useStore for backward compatibility.
+// All components that import useStore from "@/lib/store" now get Supabase data.
 
-export function useStore(): Store {
-  const ctx = useContext(StoreContext)
-  if (!ctx) throw new Error("useStore must be used within StoreProvider")
-  return ctx
-}
+export { useSupabaseStore as useStore } from "./supabase-store"

@@ -63,10 +63,10 @@ export function StaffForm({ onClose }: Props) {
     return Object.keys(e).length === 0
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return
     setSaving(true)
-    addStaff({
+    await addStaff({
       property_id: propertyId || undefined,
       first_name: firstName,
       last_name: lastName,

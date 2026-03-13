@@ -58,10 +58,10 @@ export function CostForm({ onClose }: Props) {
     return Object.keys(e).length === 0
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!validate()) return
     setSaving(true)
-    addCost({
+    await addCost({
       property_id: propertyId || undefined,
       category,
       description,
