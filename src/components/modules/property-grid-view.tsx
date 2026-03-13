@@ -5,26 +5,23 @@ import { useStore } from "@/lib/store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { RoomForm } from "@/components/modules/room-form"
+import { PropertyForm } from "@/components/modules/property-form"
 import { formatCurrency } from "@/lib/utils"
-import { MapPin, BedDouble, Plus, Settings2 } from "lucide-react"
-import type { PropertyType, RoomStatus } from "@/types"
+import { MapPin, BedDouble, Plus, Settings2, Trash2, Pencil, ToggleLeft, ToggleRight, AlertTriangle } from "lucide-react"
+import type { PropertyType, RoomStatus, Room } from "@/types"
 
-const propertyTypeLabel: Record<PropertyType, string> = {
-  lodge: "Safari Lodge",
-  houseboat: "Hausboot",
-  camp: "Camp",
+const propertyTypeLabel: Record<string, string> = {
+  lodge: "Safari Lodge", houseboat: "Hausboot", camp: "Camp", villa: "Villa", hotel: "Hotel",
 }
-
-const propertyTypeIcon: Record<PropertyType, string> = {
-  lodge: "🏕️",
-  houseboat: "🚢",
-  camp: "⛺",
+const propertyTypeIcon: Record<string, string> = {
+  lodge: "🏕️", houseboat: "🚢", camp: "⛺", villa: "🏡", hotel: "🏨",
 }
 
 const propertyStatusConfig = {
-  active: { label: "Aktiv", variant: "success" as const },
-  maintenance: { label: "Wartung", variant: "warning" as const },
-  closed: { label: "Geschlossen", variant: "danger" as const },
+  active:      { label: "Aktiv",       variant: "success" as const },
+  maintenance: { label: "Wartung",     variant: "warning" as const },
+  inactive:    { label: "Inaktiv",     variant: "neutral" as const },
 }
 
 const roomStatusConfig: Record<RoomStatus, { label: string; dot: string; badge: "success" | "warning" | "danger" | "neutral" }> = {
@@ -39,52 +36,84 @@ const roomTypeLabel: Record<string, string> = {
   family: "Familie", honeymoon: "Honeymoon", dormitory: "Schlafsaal",
 }
 
-export function PropertyGridView() {
-  const { properties: DEMO_PROPERTIES, rooms: DEMO_ROOMS } = useStore()
-  const [selectedProperty, setSelectedProperty] = useState<string | null>(null)
+const ROOM_STATUS_CYCLE: RoomStatus[] = ["available", "occupied", "maintenance", "blocked"]
 
-  const roomsByProperty = DEMO_ROOMS.reduce((acc, room) => {
+export function PropertyGridView() {
+  const { properties, rooms: allRooms, updateRoom, deleteRoom, deleteProperty, updateProperty } = useStore()
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null)
+  const [showRoomForm, setShowRoomForm] = useState(false)
+  const [showPropertyForm, setShowPropertyForm] = useState(false)
+  const [editRoom, setEditRoom] = useState<Room | undefined>(undefined)
+
+  const roomsByProperty = allRooms.reduce((acc, room) => {
     if (!acc[room.property_id]) acc[room.property_id] = []
     acc[room.property_id].push(room)
     return acc
-  }, {} as Record<string, typeof DEMO_ROOMS>)
+  }, {} as Record<string, typeof allRooms>)
 
-  const selectedProp = selectedProperty ? DEMO_PROPERTIES.find(p => p.id === selectedProperty) : null
-  const selectedRooms = selectedProperty ? (roomsByProperty[selectedProperty] || []) : []
+  const selectedProp = selectedPropertyId ? properties.find(p => p.id === selectedPropertyId) : null
+  const selectedRooms = selectedPropertyId ? (roomsByProperty[selectedPropertyId] || []) : []
+
+  function cycleRoomStatus(room: Room) {
+    const idx = ROOM_STATUS_CYCLE.indexOf(room.status)
+    const next = ROOM_STATUS_CYCLE[(idx + 1) % ROOM_STATUS_CYCLE.length]
+    updateRoom(room.id, { status: next })
+  }
+
+  function togglePropertyStatus(id: string, current: string) {
+    updateProperty(id, { status: current === "active" ? "maintenance" : "active" })
+  }
 
   return (
     <div className="p-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Property List */}
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider px-1">
-            {DEMO_PROPERTIES.length} Properties
-          </p>
-          {DEMO_PROPERTIES.map((property) => {
+          <div className="flex items-center justify-between px-1">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              {properties.length} Properties
+            </p>
+            <Button size="sm" variant="secondary" onClick={() => setShowPropertyForm(true)}>
+              <Plus className="h-3.5 w-3.5" /> Neu
+            </Button>
+          </div>
+
+          {properties.map((property) => {
             const rooms = roomsByProperty[property.id] || []
             const occupied = rooms.filter(r => r.status === "occupied").length
             const available = rooms.filter(r => r.status === "available").length
-            const status = propertyStatusConfig[property.status]
-            const isSelected = selectedProperty === property.id
+            const status = propertyStatusConfig[property.status] || propertyStatusConfig.active
+            const isSelected = selectedPropertyId === property.id
 
             return (
-              <Card
-                key={property.id}
-                onClick={() => setSelectedProperty(isSelected ? null : property.id)}
-                className={isSelected ? "ring-2 ring-[#6B4226] ring-offset-1" : ""}
+              <Card key={property.id}
+                onClick={() => setSelectedPropertyId(isSelected ? null : property.id)}
+                className={`cursor-pointer transition-all ${isSelected ? "ring-2 ring-[#6B4226] ring-offset-1" : "hover:shadow-md"}`}
               >
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl mt-0.5">{propertyTypeIcon[property.type]}</span>
+                    <span className="text-2xl mt-0.5">{propertyTypeIcon[property.property_type] || "🏠"}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-semibold text-stone-900 text-sm leading-tight">{property.name}</h3>
-                        <Badge variant={status.variant}>{status.label}</Badge>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Badge variant={status.variant}>{status.label}</Badge>
+                          {/* Status toggle */}
+                          <button
+                            onClick={e => { e.stopPropagation(); togglePropertyStatus(property.id, property.status) }}
+                            title={property.status === "active" ? "Auf Wartung setzen" : "Aktivieren"}
+                            className="p-1 rounded hover:bg-stone-100 transition-colors"
+                          >
+                            {property.status === "active"
+                              ? <ToggleRight className="h-4 w-4 text-[#4A7C59]" />
+                              : <ToggleLeft className="h-4 w-4 text-stone-400" />}
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-xs text-stone-500 mt-0.5">{propertyTypeLabel[property.type]}</p>
+                      <p className="text-xs text-stone-500 mt-0.5">{propertyTypeLabel[property.property_type] || "–"} · {property.currency}</p>
                       <div className="flex items-center gap-1 mt-1 text-xs text-stone-400">
-                        <MapPin className="h-3 w-3" />
-                        <span className="truncate">{property.location}</span>
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{property.location}, {property.country}</span>
                       </div>
                       {rooms.length > 0 && (
                         <div className="mt-2.5 space-y-1">
@@ -106,51 +135,131 @@ export function PropertyGridView() {
               </Card>
             )
           })}
+
+          {properties.length === 0 && (
+            <div className="text-center py-10 text-stone-400 border-2 border-dashed border-stone-200 rounded-xl">
+              <p className="text-sm">Noch keine Properties</p>
+              <Button size="sm" className="mt-3" onClick={() => setShowPropertyForm(true)}>
+                <Plus className="h-3.5 w-3.5" /> Erste anlegen
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Room Detail */}
         <div className="lg:col-span-2">
           {selectedProp ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-stone-900">{selectedProp.name}</h2>
-                  <p className="text-sm text-stone-500">{selectedProp.description}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="secondary" size="sm"><Settings2 className="h-3.5 w-3.5" />Bearbeiten</Button>
-                  <Button size="sm"><Plus className="h-3.5 w-3.5" />Zimmer</Button>
+            <div className="space-y-4">
+              {/* Property header */}
+              <div className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">{propertyTypeIcon[selectedProp.property_type]}</span>
+                      <h2 className="text-lg font-bold text-stone-900">{selectedProp.name}</h2>
+                    </div>
+                    <div className="flex flex-wrap gap-3 mt-1 text-xs text-stone-500">
+                      <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{selectedProp.location}, {selectedProp.country}</span>
+                      {selectedProp.contact_email && <span>{selectedProp.contact_email}</span>}
+                      {selectedProp.contact_phone && <span>{selectedProp.contact_phone}</span>}
+                      <span>Check-in: {selectedProp.check_in_time} · Check-out: {selectedProp.check_out_time}</span>
+                    </div>
+                    {selectedProp.description && (
+                      <p className="text-xs text-stone-400 mt-1 line-clamp-2">{selectedProp.description}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button variant="secondary" size="sm" onClick={() => { setShowRoomForm(true); setEditRoom(undefined) }}>
+                      <Plus className="h-3.5 w-3.5" /> Zimmer
+                    </Button>
+                    <button
+                      onClick={() => { if (confirm(`Property "${selectedProp.name}" wirklich löschen?`)) { deleteProperty(selectedProp.id); setSelectedPropertyId(null) } }}
+                      className="p-2 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
+                      title="Property löschen"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {selectedRooms.map((room) => {
-                  const sc = roomStatusConfig[room.status]
-                  return (
-                    <div key={room.id} className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm hover:shadow transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${sc.dot}`} />
-                          <div>
-                            <p className="font-semibold text-stone-900 text-sm">{room.name}</p>
-                            <p className="text-xs text-stone-400">#{room.room_number} · {roomTypeLabel[room.type]} · {room.capacity} Pers.</p>
+
+              {/* Rooms grid */}
+              {selectedRooms.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedRooms.map((room) => {
+                    const sc = roomStatusConfig[room.status]
+                    return (
+                      <div key={room.id} className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm hover:shadow transition-shadow">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${sc.dot}`} />
+                            <div className="min-w-0">
+                              <p className="font-semibold text-stone-900 text-sm truncate">{room.name}</p>
+                              <p className="text-xs text-stone-400">
+                                #{room.room_number} · {roomTypeLabel[room.room_type] || room.room_type} · {room.capacity} Pers.
+                                {room.square_meters ? ` · ${room.square_meters}m²` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Badge variant={sc.badge}>{sc.label}</Badge>
                           </div>
                         </div>
-                        <Badge variant={sc.badge}>{sc.label}</Badge>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-stone-50 flex justify-between items-center">
-                        <span className="text-sm font-bold text-[#6B4226]">{formatCurrency(room.base_price_per_night)}<span className="text-xs font-normal text-stone-400"> / Nacht</span></span>
-                        {room.nightsbridge_room_id && (
-                          <span className="text-xs text-blue-500">NB: {room.nightsbridge_room_id}</span>
+
+                        {/* Amenities */}
+                        {room.amenities && room.amenities.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {room.amenities.slice(0, 4).map(a => (
+                              <span key={a} className="text-[10px] bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">{a}</span>
+                            ))}
+                            {room.amenities.length > 4 && (
+                              <span className="text-[10px] text-stone-400">+{room.amenities.length - 4}</span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="mt-3 pt-3 border-t border-stone-50 flex items-center justify-between">
+                          <span className="text-sm font-bold text-[#6B4226]">
+                            {formatCurrency(room.base_price_per_night, selectedProp.currency)}
+                            <span className="text-xs font-normal text-stone-400"> / Nacht</span>
+                          </span>
+                          <div className="flex gap-1">
+                            {/* Status cycle button */}
+                            <button
+                              onClick={() => cycleRoomStatus(room)}
+                              title={`Status: ${sc.label} → weiterschalten`}
+                              className="px-2 py-1 text-xs rounded-lg border border-stone-200 text-stone-500 hover:border-[#6B4226] hover:text-[#6B4226] transition-colors"
+                            >
+                              Status ↻
+                            </button>
+                            <button onClick={() => { setEditRoom(room); setShowRoomForm(true) }}
+                              className="p-1.5 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors" title="Bearbeiten">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => { if (confirm(`Zimmer "${room.name}" löschen?`)) deleteRoom(room.id) }}
+                              className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors" title="Löschen">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {room.status === "maintenance" && (
+                          <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-600 bg-orange-50 rounded-lg px-2 py-1.5">
+                            <AlertTriangle className="h-3 w-3 shrink-0" />
+                            Zimmer in Wartung — nicht buchbar
+                          </div>
                         )}
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-              {selectedRooms.length === 0 && (
+                    )
+                  })}
+                </div>
+              ) : (
                 <div className="flex flex-col items-center justify-center h-40 text-stone-400 border-2 border-dashed border-stone-200 rounded-xl">
                   <BedDouble className="h-8 w-8 mb-2" />
                   <p className="text-sm">Noch keine Zimmer angelegt</p>
+                  <Button size="sm" className="mt-3" onClick={() => { setShowRoomForm(true); setEditRoom(undefined) }}>
+                    <Plus className="h-3.5 w-3.5" /> Erstes Zimmer anlegen
+                  </Button>
                 </div>
               )}
             </div>
@@ -163,6 +272,17 @@ export function PropertyGridView() {
           )}
         </div>
       </div>
+
+      {showRoomForm && (
+        <RoomForm
+          room={editRoom}
+          propertyId={selectedPropertyId || undefined}
+          onClose={() => { setShowRoomForm(false); setEditRoom(undefined) }}
+        />
+      )}
+      {showPropertyForm && (
+        <PropertyForm onClose={() => setShowPropertyForm(false)} />
+      )}
     </div>
   )
 }

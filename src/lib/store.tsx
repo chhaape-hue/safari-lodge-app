@@ -33,8 +33,11 @@ interface StoreActions {
   deleteStaff: (id: string) => void
   // Properties & Rooms
   addProperty: (property: Omit<Property, "id" | "created_at" | "updated_at">) => Property
+  updateProperty: (id: string, updates: Partial<Property>) => void
+  deleteProperty: (id: string) => void
   addRoom: (room: Omit<Room, "id" | "created_at" | "updated_at">) => Room
   updateRoom: (id: string, updates: Partial<Room>) => void
+  deleteRoom: (id: string) => void
   // Reset
   resetToDemo: () => void
 }
@@ -196,6 +199,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return property
   }, [update])
 
+  const updateProperty = useCallback((id: string, updates: Partial<Property>) => {
+    update(s => ({ ...s, properties: s.properties.map(p => p.id === id ? { ...p, ...updates, updated_at: now() } : p) }))
+  }, [update])
+
+  const deleteProperty = useCallback((id: string) => {
+    update(s => ({ ...s, properties: s.properties.filter(p => p.id !== id) }))
+  }, [update])
+
   const addRoom = useCallback((data: Omit<Room, "id" | "created_at" | "updated_at">): Room => {
     const room: Room = { ...data, id: uid(), created_at: now(), updated_at: now() }
     update(s => ({ ...s, rooms: [...s.rooms, room] }))
@@ -204,6 +215,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const updateRoom = useCallback((id: string, updates: Partial<Room>) => {
     update(s => ({ ...s, rooms: s.rooms.map(r => r.id === id ? { ...r, ...updates, updated_at: now() } : r) }))
+  }, [update])
+
+  const deleteRoom = useCallback((id: string) => {
+    update(s => ({ ...s, rooms: s.rooms.filter(r => r.id !== id) }))
   }, [update])
 
   // ── Reset ──
@@ -219,7 +234,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addGuest, updateGuest,
     addCost, updateCost, deleteCost,
     addStaff, updateStaff, deleteStaff,
-    addProperty, addRoom, updateRoom,
+    addProperty, updateProperty, deleteProperty,
+    addRoom, updateRoom, deleteRoom,
     resetToDemo,
   }
 

@@ -1,15 +1,26 @@
 // ─── Properties ───────────────────────────────────────────────────────────────
 
-export type PropertyType = "lodge" | "houseboat" | "camp"
-export type PropertyStatus = "active" | "maintenance" | "closed"
+export type PropertyType = "lodge" | "houseboat" | "camp" | "villa" | "hotel"
+export type PropertyStatus = "active" | "maintenance" | "inactive"
 
 export interface Property {
   id: string
   name: string
-  type: PropertyType
+  property_type: PropertyType
+  /** @deprecated use property_type */
+  type?: PropertyType
   status: PropertyStatus
   location: string
+  country: string
+  currency: string
   description?: string
+  check_in_time: string
+  check_out_time: string
+  contact_email?: string
+  contact_phone?: string
+  website?: string
+  latitude?: number
+  longitude?: number
   nightsbridge_property_id?: string
   created_at: string
   updated_at: string
@@ -26,10 +37,18 @@ export interface Room {
   property?: Property
   name: string
   room_number: string
-  type: RoomType
+  room_type: RoomType
+  /** @deprecated use room_type */
+  type?: RoomType
   status: RoomStatus
   capacity: number
+  max_adults: number
+  max_children: number
   base_price_per_night: number
+  floor?: number | string
+  square_meters?: number
+  description?: string
+  amenities: string[]
   nightsbridge_room_id?: string
   created_at: string
   updated_at: string
@@ -44,7 +63,7 @@ export interface Guest {
   id: string
   first_name: string
   last_name: string
-  email: string
+  email?: string
   phone?: string
   nationality?: string
   passport_number?: string
@@ -123,17 +142,6 @@ export interface StaffMember {
   notes?: string
   created_at: string
   updated_at: string
-}
-
-export interface ShiftSchedule {
-  id: string
-  staff_id: string
-  staff?: StaffMember
-  property_id: string
-  date: string
-  shift_start: string
-  shift_end: string
-  notes?: string
 }
 
 // ─── Dashboard Stats ──────────────────────────────────────────────────────────
