@@ -520,3 +520,6 @@ export function useSupabaseStore(): SupabaseStore {
   if (!ctx) throw new Error("useSupabaseStore must be used within SupabaseStoreProvider")
   return ctx
 }
+
+// Alias for convenience
+export const useStore = useSupabaseStore
