@@ -52,44 +52,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    // Bail out after 8 s so the app never hangs forever
-    const timeout = setTimeout(() => {
-      setState(s => s.loading ? { ...s, loading: false } : s)
-    }, 8000)
+    // onAuthStateChange is the single source of truth for auth state.
+    //
+    // INITIAL_SESSION fires synchronously from localStorage – no network call
+    // needed – so loading:false is set within milliseconds regardless of
+    // network speed or token expiry.  Subsequent events (TOKEN_REFRESHED,
+    // SIGNED_OUT) keep the session up-to-date automatically.
+    //
+    // loadProfile() runs in the background and never blocks the spinner from
+    // clearing, which eliminates the "stuck at Authenticating..." bug.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_OUT") {
+          setState({ user: null, profile: null, session: null, loading: false })
+          return
+        }
 
-    // getSession() triggers the client's internal _initialize() so it reads
-    // the stored token from localStorage.  Without it, INITIAL_SESSION never fires.
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await loadProfile(session.user.id)
-        clearTimeout(timeout)
-        setState({ user: session.user, profile, session, loading: false })
-      } else {
-        clearTimeout(timeout)
-        setState(s => ({ ...s, loading: false }))
+        if (!session?.user) {
+          // INITIAL_SESSION with no stored session → not logged in
+          setState(s => ({ ...s, loading: false }))
+          return
+        }
+
+        // We have a session: clear the spinner immediately, then fetch profile
+        setState(s => ({ ...s, user: session.user, session, loading: false }))
+
+        loadProfile(session.user.id)
+          .then(profile => setState(s =>
+            s.user?.id === session.user.id ? { ...s, profile } : s
+          ))
+          .catch(() => {}) // profile failure must not affect auth state
       }
-    }).catch(() => {
-      clearTimeout(timeout)
-      setState(s => ({ ...s, loading: false }))
-    })
+    )
 
-    // Listen to subsequent auth events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED).
-    // Skip INITIAL_SESSION – getSession() above already covers the initial state,
-    // so we avoid a duplicate loadProfile call and an extra lock acquisition.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "INITIAL_SESSION") return
-      if (session?.user) {
-        const profile = await loadProfile(session.user.id)
-        setState({ user: session.user, profile, session, loading: false })
-      } else {
-        setState({ user: null, profile: null, session: null, loading: false })
-      }
-    })
-
-    return () => {
-      clearTimeout(timeout)
-      subscription.unsubscribe()
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const signIn = async (email: string, password: string) => {
