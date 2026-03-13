@@ -334,7 +334,39 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  useEffect(() => { reload() }, [reload])
+  // Only load data once there is an authenticated session.
+  // Using onAuthStateChange ensures we don't fire unauthenticated requests
+  // that would be blocked by RLS before the Supabase client has restored its token.
+  useEffect(() => {
+    let loaded = false
+
+    // Handle initial session (already stored in localStorage)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        loaded = true
+        reload()
+      } else {
+        setState(s => ({ ...s, loading: false }))
+      }
+    })
+
+    // Handle auth state changes (login / logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && !loaded) {
+        loaded = true
+        reload()
+      } else if (!session) {
+        loaded = false
+        setState({
+          properties: [], rooms: [], bookings: [], guests: [], costs: [], staff: [],
+          stockItems: [], maintenanceTasks: [],
+          loading: false, error: null,
+        })
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [reload])
 
   // ── Bookings ──
 
