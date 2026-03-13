@@ -57,12 +57,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setState(s => s.loading ? { ...s, loading: false } : s)
     }, 8000)
 
-    // onAuthStateChange fires INITIAL_SESSION immediately on subscribe,
-    // giving us the stored session without a separate getSession() call.
-    // Using getSession() in parallel would compete for the same Web Lock
-    // and cause "AbortError: The lock request is aborted" errors.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // getSession() triggers the client's internal _initialize() so it reads
+    // the stored token from localStorage.  Without it, INITIAL_SESSION never fires.
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       clearTimeout(timeout)
+      if (session?.user) {
+        const profile = await loadProfile(session.user.id)
+        setState({ user: session.user, profile, session, loading: false })
+      } else {
+        setState(s => ({ ...s, loading: false }))
+      }
+    }).catch(() => {
+      clearTimeout(timeout)
+      setState(s => ({ ...s, loading: false }))
+    })
+
+    // Listen to subsequent auth events (SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED).
+    // Skip INITIAL_SESSION – getSession() above already covers the initial state,
+    // so we avoid a duplicate loadProfile call and an extra lock acquisition.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "INITIAL_SESSION") return
       if (session?.user) {
         const profile = await loadProfile(session.user.id)
         setState({ user: session.user, profile, session, loading: false })
