@@ -31,6 +31,7 @@ export function CostForm({ onClose }: Props) {
   const { properties, addCost } = useStore()
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saveError, setSaveError] = useState("")
 
   const [propertyId, setPropertyId] = useState("")
   const [category, setCategory] = useState<CostCategory>("other")
@@ -60,20 +61,27 @@ export function CostForm({ onClose }: Props) {
 
   async function handleSave() {
     if (!validate()) return
+    setSaveError("")
     setSaving(true)
-    await addCost({
-      property_id: propertyId || undefined,
-      category,
-      description,
-      amount: parseFloat(amount),
-      currency,
-      frequency,
-      date,
-      supplier: supplier || undefined,
-      invoice_number: invoiceNumber || undefined,
-      notes: notes || undefined,
-    })
-    onClose()
+    try {
+      await addCost({
+        property_id: propertyId || undefined,
+        category,
+        description,
+        amount: parseFloat(amount),
+        currency,
+        frequency,
+        date,
+        supplier: supplier || undefined,
+        invoice_number: invoiceNumber || undefined,
+        notes: notes || undefined,
+      })
+      onClose()
+    } catch (err: unknown) {
+      setSaveError((err as Error).message || "Failed to save. Please try again.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -164,6 +172,11 @@ export function CostForm({ onClose }: Props) {
           </div>
         </div>
 
+        {saveError && (
+          <div className="px-6 pb-2">
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
+          </div>
+        )}
         <div className="flex justify-between px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>

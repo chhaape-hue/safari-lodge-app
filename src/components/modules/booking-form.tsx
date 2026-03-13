@@ -28,6 +28,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saveError, setSaveError] = useState("")
 
   // Step 1: Property & Room & Dates
   const [propertyId, setPropertyId] = useState(prefillPropertyId || properties[0]?.id || "")
@@ -90,6 +91,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
       setErrors({ totalAmount: "Amount is required" })
       return
     }
+    setSaveError("")
     setSaving(true)
     try {
       let guestId = existingGuestId
@@ -113,6 +115,8 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
         nightsbridge_booking_id: nbBookingId || undefined,
       })
       onClose()
+    } catch (err: unknown) {
+      setSaveError((err as Error).message || "Failed to save booking. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -398,6 +402,11 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
         </div>
 
         {/* Footer buttons */}
+        {saveError && (
+          <div className="px-6 pb-2">
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
+          </div>
+        )}
         <div className="flex justify-between items-center px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
           <Button variant="ghost" onClick={step === 1 ? onClose : () => setStep(s => (s - 1) as 1 | 2 | 3)}>
             {step === 1 ? "Cancel" : "← Back"}

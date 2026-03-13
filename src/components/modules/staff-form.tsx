@@ -30,6 +30,7 @@ export function StaffForm({ onClose }: Props) {
   const { properties, addStaff } = useStore()
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saveError, setSaveError] = useState("")
 
   const [propertyId, setPropertyId] = useState("")
   const [firstName, setFirstName] = useState("")
@@ -65,25 +66,32 @@ export function StaffForm({ onClose }: Props) {
 
   async function handleSave() {
     if (!validate()) return
+    setSaveError("")
     setSaving(true)
-    await addStaff({
-      property_id: propertyId || undefined,
-      first_name: firstName,
-      last_name: lastName,
-      email: email || undefined,
-      phone: phone || undefined,
-      department,
-      position,
-      employment_type: employmentType,
-      status: "active",
-      start_date: startDate,
-      end_date: endDate || undefined,
-      salary: parseFloat(salary),
-      currency,
-      id_number: idNumber || undefined,
-      notes: notes || undefined,
-    })
-    onClose()
+    try {
+      await addStaff({
+        property_id: propertyId || undefined,
+        first_name: firstName,
+        last_name: lastName,
+        email: email || undefined,
+        phone: phone || undefined,
+        department,
+        position,
+        employment_type: employmentType,
+        status: "active",
+        start_date: startDate,
+        end_date: endDate || undefined,
+        salary: parseFloat(salary),
+        currency,
+        id_number: idNumber || undefined,
+        notes: notes || undefined,
+      })
+      onClose()
+    } catch (err: unknown) {
+      setSaveError((err as Error).message || "Failed to save. Please try again.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -200,6 +208,11 @@ export function StaffForm({ onClose }: Props) {
           </div>
         </div>
 
+        {saveError && (
+          <div className="px-6 pb-2">
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
+          </div>
+        )}
         <div className="flex justify-between px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>

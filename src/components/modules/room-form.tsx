@@ -39,6 +39,7 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
   const isEdit = Boolean(room)
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saveError, setSaveError] = useState("")
 
   const [selectedPropertyId, setSelectedPropertyId] = useState(room?.property_id || propertyId || properties[0]?.id || "")
   const [name, setName] = useState(room?.name || "")
@@ -76,28 +77,35 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
 
   async function handleSave() {
     if (!validate()) return
+    setSaveError("")
     setSaving(true)
-    const data = {
-      property_id: selectedPropertyId,
-      name: name.trim(),
-      room_number: roomNumber.trim(),
-      room_type: type,
-      capacity,
-      max_adults: maxAdults,
-      max_children: maxChildren,
-      base_price_per_night: parseFloat(price),
-      status,
-      floor: floor ? parseInt(floor) : undefined,
-      square_meters: sqm ? parseFloat(sqm) : undefined,
-      description: description || undefined,
-      amenities,
+    try {
+      const data = {
+        property_id: selectedPropertyId,
+        name: name.trim(),
+        room_number: roomNumber.trim(),
+        room_type: type,
+        capacity,
+        max_adults: maxAdults,
+        max_children: maxChildren,
+        base_price_per_night: parseFloat(price),
+        status,
+        floor: floor ? parseInt(floor) : undefined,
+        square_meters: sqm ? parseFloat(sqm) : undefined,
+        description: description || undefined,
+        amenities,
+      }
+      if (isEdit && room) {
+        await updateRoom(room.id, data)
+      } else {
+        await addRoom(data)
+      }
+      onClose()
+    } catch (err: unknown) {
+      setSaveError((err as Error).message || "Failed to save. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    if (isEdit && room) {
-      updateRoom(room.id, data)
-    } else {
-      await addRoom(data)
-    }
-    onClose()
   }
 
   return (
@@ -236,6 +244,11 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
           </div>
         </div>
 
+        {saveError && (
+          <div className="px-6 pb-2">
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
+          </div>
+        )}
         <div className="flex justify-between px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>

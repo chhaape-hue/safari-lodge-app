@@ -27,6 +27,7 @@ export function PropertyForm({ property, onClose }: Props) {
   const isEdit = Boolean(property)
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saveError, setSaveError] = useState("")
 
   const [name, setName] = useState(property?.name || "")
   const [type, setType] = useState<PropertyType>(property?.property_type || "lodge")
@@ -60,26 +61,33 @@ export function PropertyForm({ property, onClose }: Props) {
 
   async function handleSave() {
     if (!validate()) return
+    setSaveError("")
     setSaving(true)
-    const data = {
-      name: name.trim(),
-      property_type: type,
-      location: location.trim(),
-      country: country.trim(),
-      currency,
-      description: description || undefined,
-      check_in_time: checkInTime,
-      check_out_time: checkOutTime,
-      status: status as "active" | "inactive" | "maintenance",
-      contact_email: email || undefined,
-      contact_phone: phone || undefined,
-      website: website || undefined,
-      nightsbridge_property_id: nbPropertyId || undefined,
-      latitude: latitude ? parseFloat(latitude) : undefined,
-      longitude: longitude ? parseFloat(longitude) : undefined,
+    try {
+      const data = {
+        name: name.trim(),
+        property_type: type,
+        location: location.trim(),
+        country: country.trim(),
+        currency,
+        description: description || undefined,
+        check_in_time: checkInTime,
+        check_out_time: checkOutTime,
+        status: status as "active" | "inactive" | "maintenance",
+        contact_email: email || undefined,
+        contact_phone: phone || undefined,
+        website: website || undefined,
+        nightsbridge_property_id: nbPropertyId || undefined,
+        latitude: latitude ? parseFloat(latitude) : undefined,
+        longitude: longitude ? parseFloat(longitude) : undefined,
+      }
+      await addProperty(data)
+      onClose()
+    } catch (err: unknown) {
+      setSaveError((err as Error).message || "Failed to save. Please check your connection and try again.")
+    } finally {
+      setSaving(false)
     }
-    await addProperty(data)
-    onClose()
   }
 
   return (
@@ -221,6 +229,11 @@ export function PropertyForm({ property, onClose }: Props) {
           </div>
         </div>
 
+        {saveError && (
+          <div className="px-6 pb-2">
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{saveError}</p>
+          </div>
+        )}
         <div className="flex justify-between px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
           <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>

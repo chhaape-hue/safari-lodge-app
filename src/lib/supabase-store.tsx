@@ -2,15 +2,57 @@
 
 /**
  * Supabase-backed data store.
- * Replaces the localStorage store once Supabase is configured.
- * Falls back gracefully if Supabase is not reachable.
+ * Provides live data for all modules including Stock and Maintenance.
  */
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react"
 import { supabase } from "./supabase"
 import type { Property, Room, Booking, Guest, CostEntry, StaffMember } from "@/types"
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Stock & Maintenance Types ─────────────────────────────────────────────
+
+export interface StockItem {
+  id: string
+  property_id?: string
+  name: string
+  category: string
+  unit: string
+  current_qty: number
+  minimum_qty: number
+  reorder_qty: number
+  unit_cost: number
+  supplier?: string
+  notes?: string
+  last_updated: string
+  created_at: string
+  updated_at: string
+}
+
+export type MaintenancePriority = "critical" | "high" | "medium" | "low"
+export type MaintenanceStatus = "open" | "in_progress" | "completed" | "deferred"
+export type MaintenanceCategory = "vehicle" | "building" | "electrical" | "plumbing" | "equipment" | "other"
+
+export interface MaintenanceTask {
+  id: string
+  property_id?: string
+  title: string
+  description?: string
+  category: MaintenanceCategory
+  priority: MaintenancePriority
+  status: MaintenanceStatus
+  location?: string
+  reported_by?: string
+  assigned_to?: string
+  due_date?: string
+  completed_at?: string
+  estimated_cost?: number
+  actual_cost?: number
+  notes?: string
+  created_at: string
+  updated_at: string
+}
+
+// ─── Store Types ───────────────────────────────────────────────────────────
 
 interface StoreState {
   properties: Property[]
@@ -19,6 +61,8 @@ interface StoreState {
   guests: Guest[]
   costs: CostEntry[]
   staff: StaffMember[]
+  stockItems: StockItem[]
+  maintenanceTasks: MaintenanceTask[]
   loading: boolean
   error: string | null
 }
@@ -48,11 +92,19 @@ interface StoreActions {
   addRoom: (r: Omit<Room, "id" | "created_at" | "updated_at">) => Promise<Room>
   updateRoom: (id: string, updates: Partial<Room>) => Promise<void>
   deleteRoom: (id: string) => Promise<void>
+  // Stock
+  addStockItem: (item: Omit<StockItem, "id" | "created_at" | "updated_at">) => Promise<StockItem>
+  updateStockItem: (id: string, updates: Partial<StockItem>) => Promise<void>
+  deleteStockItem: (id: string) => Promise<void>
+  // Maintenance
+  addMaintenanceTask: (task: Omit<MaintenanceTask, "id" | "created_at" | "updated_at">) => Promise<MaintenanceTask>
+  updateMaintenanceTask: (id: string, updates: Partial<MaintenanceTask>) => Promise<void>
+  deleteMaintenanceTask: (id: string) => Promise<void>
 }
 
 type SupabaseStore = StoreState & StoreActions
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 
 function generateRef(propertyName: string) {
   const prefix = propertyName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 3)
@@ -60,7 +112,6 @@ function generateRef(propertyName: string) {
   return `${prefix}-${ym}-${String(Math.floor(Math.random() * 9000) + 1000)}`
 }
 
-// Map Supabase snake_case to our camelCase type field names
 function mapProperty(row: Record<string, unknown>): Property {
   return {
     id: row.id as string,
@@ -182,29 +233,76 @@ function mapStaff(row: Record<string, unknown>): StaffMember {
   }
 }
 
-// ─── Context ──────────────────────────────────────────────────────────────────
+function mapStockItem(row: Record<string, unknown>): StockItem {
+  return {
+    id: row.id as string,
+    property_id: row.property_id as string | undefined,
+    name: row.name as string,
+    category: row.category as string,
+    unit: row.unit as string,
+    current_qty: row.current_qty as number,
+    minimum_qty: row.minimum_qty as number,
+    reorder_qty: row.reorder_qty as number,
+    unit_cost: row.unit_cost as number,
+    supplier: row.supplier as string | undefined,
+    notes: row.notes as string | undefined,
+    last_updated: row.last_updated as string,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  }
+}
+
+function mapMaintenanceTask(row: Record<string, unknown>): MaintenanceTask {
+  return {
+    id: row.id as string,
+    property_id: row.property_id as string | undefined,
+    title: row.title as string,
+    description: row.description as string | undefined,
+    category: row.category as MaintenanceCategory,
+    priority: row.priority as MaintenancePriority,
+    status: row.status as MaintenanceStatus,
+    location: row.location as string | undefined,
+    reported_by: row.reported_by as string | undefined,
+    assigned_to: row.assigned_to as string | undefined,
+    due_date: row.due_date as string | undefined,
+    completed_at: row.completed_at as string | undefined,
+    estimated_cost: row.estimated_cost as number | undefined,
+    actual_cost: row.actual_cost as number | undefined,
+    notes: row.notes as string | undefined,
+    created_at: row.created_at as string,
+    updated_at: row.updated_at as string,
+  }
+}
+
+// ─── Context ──────────────────────────────────────────────────────────────
 
 const SupabaseStoreContext = createContext<SupabaseStore | null>(null)
 
 export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<StoreState>({
     properties: [], rooms: [], bookings: [], guests: [], costs: [], staff: [],
+    stockItems: [], maintenanceTasks: [],
     loading: true, error: null,
   })
 
   const reload = useCallback(async () => {
     setState(s => ({ ...s, loading: true, error: null }))
     try {
-      const [props, rooms, guests, bookings, costs, staff] = await Promise.all([
+      const [props, rooms, guests, bookings, costs, staff, stock, maintenance] = await Promise.all([
         supabase.from("properties").select("*").order("name"),
         supabase.from("rooms").select("*").order("room_number"),
         supabase.from("guests").select("*").order("last_name"),
         supabase.from("bookings").select("*").order("created_at", { ascending: false }),
         supabase.from("cost_entries").select("*").order("date", { ascending: false }),
         supabase.from("staff_members").select("*").order("last_name"),
+        supabase.from("stock_items").select("*").order("name"),
+        supabase.from("maintenance_tasks").select("*").order("created_at", { ascending: false }),
       ])
 
-      if (props.error) throw props.error
+      // Surface the first error encountered
+      const firstError = [props, rooms, guests, bookings, costs, staff, stock, maintenance].find(r => r.error)
+      if (firstError?.error) throw firstError.error
+
       setState({
         properties: (props.data || []).map(mapProperty),
         rooms: (rooms.data || []).map(mapRoom),
@@ -212,11 +310,18 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
         bookings: (bookings.data || []).map(mapBooking),
         costs: (costs.data || []).map(mapCost),
         staff: (staff.data || []).map(mapStaff),
+        stockItems: (stock.data || []).map(mapStockItem),
+        maintenanceTasks: (maintenance.data || []).map(mapMaintenanceTask),
         loading: false,
         error: null,
       })
     } catch (err: unknown) {
-      setState(s => ({ ...s, loading: false, error: (err as Error).message || "Failed to load data" }))
+      const msg = (err as Error).message || "Failed to load data"
+      // If missing env vars, give a clearer message
+      const errorMsg = msg.includes("undefined") || msg.includes("Invalid URL")
+        ? "Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file."
+        : msg
+      setState(s => ({ ...s, loading: false, error: errorMsg }))
     }
   }, [])
 
@@ -350,6 +455,50 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
     setState(s => ({ ...s, rooms: s.rooms.filter(r => r.id !== id) }))
   }, [])
 
+  // ── Stock Items ──
+
+  const addStockItem = useCallback(async (data: Omit<StockItem, "id" | "created_at" | "updated_at">): Promise<StockItem> => {
+    const { data: row, error } = await supabase.from("stock_items").insert(data).select().single()
+    if (error) throw error
+    const item = mapStockItem(row)
+    setState(s => ({ ...s, stockItems: [...s.stockItems, item].sort((a, b) => a.name.localeCompare(b.name)) }))
+    return item
+  }, [])
+
+  const updateStockItem = useCallback(async (id: string, updates: Partial<StockItem>) => {
+    const { error } = await supabase.from("stock_items").update(updates).eq("id", id)
+    if (error) throw error
+    setState(s => ({ ...s, stockItems: s.stockItems.map(i => i.id === id ? { ...i, ...updates } : i) }))
+  }, [])
+
+  const deleteStockItem = useCallback(async (id: string) => {
+    const { error } = await supabase.from("stock_items").delete().eq("id", id)
+    if (error) throw error
+    setState(s => ({ ...s, stockItems: s.stockItems.filter(i => i.id !== id) }))
+  }, [])
+
+  // ── Maintenance Tasks ──
+
+  const addMaintenanceTask = useCallback(async (data: Omit<MaintenanceTask, "id" | "created_at" | "updated_at">): Promise<MaintenanceTask> => {
+    const { data: row, error } = await supabase.from("maintenance_tasks").insert(data).select().single()
+    if (error) throw error
+    const task = mapMaintenanceTask(row)
+    setState(s => ({ ...s, maintenanceTasks: [task, ...s.maintenanceTasks] }))
+    return task
+  }, [])
+
+  const updateMaintenanceTask = useCallback(async (id: string, updates: Partial<MaintenanceTask>) => {
+    const { error } = await supabase.from("maintenance_tasks").update(updates).eq("id", id)
+    if (error) throw error
+    setState(s => ({ ...s, maintenanceTasks: s.maintenanceTasks.map(t => t.id === id ? { ...t, ...updates } : t) }))
+  }, [])
+
+  const deleteMaintenanceTask = useCallback(async (id: string) => {
+    const { error } = await supabase.from("maintenance_tasks").delete().eq("id", id)
+    if (error) throw error
+    setState(s => ({ ...s, maintenanceTasks: s.maintenanceTasks.filter(t => t.id !== id) }))
+  }, [])
+
   const store: SupabaseStore = {
     ...state,
     reload,
@@ -359,6 +508,8 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
     addStaff, updateStaff, deleteStaff,
     addProperty, updateProperty, deleteProperty,
     addRoom, updateRoom, deleteRoom,
+    addStockItem, updateStockItem, deleteStockItem,
+    addMaintenanceTask, updateMaintenanceTask, deleteMaintenanceTask,
   }
 
   return <SupabaseStoreContext.Provider value={store}>{children}</SupabaseStoreContext.Provider>
