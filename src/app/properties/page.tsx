@@ -1,17 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { DEMO_PROPERTIES } from "@/lib/demo-data"
+import { useStore } from "@/lib/store"
 import { LayoutGrid, CalendarDays, Plus } from "lucide-react"
 import { PropertyGridView } from "@/components/modules/property-grid-view"
 import { AvailabilityCalendar } from "@/components/modules/availability-calendar"
+import Link from "next/link"
 
 export default function PropertiesPage() {
+  const { properties } = useStore()
   const [view, setView] = useState<"calendar" | "grid">("calendar")
-  const [selectedPropertyId, setSelectedPropertyId] = useState(DEMO_PROPERTIES[0].id)
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>("")
+
+  // Set first property once data loads
+  useEffect(() => {
+    if (!selectedPropertyId && properties.length > 0) {
+      setSelectedPropertyId(properties[0].id)
+    }
+  }, [properties, selectedPropertyId])
 
   return (
     <div>
@@ -44,19 +52,25 @@ export default function PropertiesPage() {
                 Übersicht
               </button>
             </div>
-            <Button size="sm">
-              <Plus className="h-3.5 w-3.5" />
-              Neue Buchung
-            </Button>
+            <Link href="/bookings/new">
+              <Button size="sm">
+                <Plus className="h-3.5 w-3.5" />
+                Neue Buchung
+              </Button>
+            </Link>
           </div>
         }
       />
 
       {view === "calendar" ? (
-        <AvailabilityCalendar
-          selectedPropertyId={selectedPropertyId}
-          onPropertyChange={setSelectedPropertyId}
-        />
+        selectedPropertyId ? (
+          <AvailabilityCalendar
+            selectedPropertyId={selectedPropertyId}
+            onPropertyChange={setSelectedPropertyId}
+          />
+        ) : (
+          <div className="p-12 text-center text-stone-500 text-sm">Lade Properties...</div>
+        )
       ) : (
         <PropertyGridView />
       )}

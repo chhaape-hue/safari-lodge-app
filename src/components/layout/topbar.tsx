@@ -1,6 +1,7 @@
 "use client"
 
-import { Bell, Search } from "lucide-react"
+import { Bell } from "lucide-react"
+import { useAuth } from "@/lib/auth"
 
 interface TopbarProps {
   title: string
@@ -9,6 +10,12 @@ interface TopbarProps {
 }
 
 export function Topbar({ title, subtitle, actions }: TopbarProps) {
+  const { profile } = useAuth()
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    : profile?.email?.slice(0, 2).toUpperCase() ?? "?"
+
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-stone-200 bg-white/95 backdrop-blur px-6">
       <div>
@@ -20,8 +27,11 @@ export function Topbar({ title, subtitle, actions }: TopbarProps) {
         <button className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors">
           <Bell className="h-4 w-4" />
         </button>
-        <div className="h-8 w-8 rounded-full bg-amber-600 flex items-center justify-center">
-          <span className="text-xs font-bold text-white">US</span>
+        <div
+          className="h-8 w-8 rounded-full bg-amber-600 flex items-center justify-center"
+          title={profile?.full_name || profile?.email || ""}
+        >
+          <span className="text-xs font-bold text-white">{initials}</span>
         </div>
       </div>
     </header>

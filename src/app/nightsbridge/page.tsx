@@ -5,33 +5,23 @@ import { Topbar } from "@/components/layout/topbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { DEMO_PROPERTIES, DEMO_BOOKINGS } from "@/lib/demo-data"
-import { formatDate } from "@/lib/utils"
+import { useStore } from "@/lib/store"
 import {
   RefreshCw, CheckCircle2, XCircle, AlertCircle,
-  Link2, Settings, ArrowLeftRight, Clock, ExternalLink
+  Link2, Settings, ExternalLink
 } from "lucide-react"
 
-const syncLog = [
-  { time: "2025-03-12 08:45", action: "Sync gestartet", status: "success", details: "4 Buchungen synchronisiert" },
-  { time: "2025-03-12 08:45", action: "Buchung NB-78451 importiert", status: "success", details: "O Bona Moremi – Sarah Johnson" },
-  { time: "2025-03-11 14:20", action: "Verfügbarkeit aktualisiert", status: "success", details: "O Bona Moremi: 5 Zimmer aktualisiert" },
-  { time: "2025-03-11 09:00", action: "Sync gestartet", status: "warning", details: "1 Konflikt erkannt: Zimmer 04 doppelt gebucht" },
-  { time: "2025-03-10 18:30", action: "Buchung NB-78234 importiert", status: "success", details: "O Bona Moremi – Klaus Müller" },
-  { time: "2025-03-10 08:00", action: "Sync fehlgeschlagen", status: "error", details: "API Timeout – wird erneut versucht" },
-]
-
 export default function NightsbridgePage() {
+  const { properties, bookings } = useStore()
   const [isSyncing, setIsSyncing] = useState(false)
-  const [lastSync] = useState("12.03.2025, 08:45")
 
   const handleSync = () => {
     setIsSyncing(true)
     setTimeout(() => setIsSyncing(false), 2500)
   }
 
-  const connectedProperties = DEMO_PROPERTIES.filter(p => p.nightsbridge_property_id)
-  const nbBookings = DEMO_BOOKINGS.filter(b => b.nightsbridge_booking_id)
+  const connectedProperties = properties.filter(p => p.nightsbridge_property_id)
+  const nbBookings = bookings.filter(b => b.nightsbridge_booking_id)
 
   return (
     <div>
@@ -52,26 +42,26 @@ export default function NightsbridgePage() {
           <Card>
             <CardContent className="pt-5">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${connectedProperties.length > 0 ? "bg-green-100" : "bg-stone-100"}`}>
+                  {connectedProperties.length > 0
+                    ? <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    : <XCircle className="h-5 w-5 text-stone-400" />}
                 </div>
                 <div>
-                  <p className="font-semibold text-stone-900">Verbunden</p>
-                  <p className="text-xs text-stone-500">Nightsbridge API aktiv</p>
+                  <p className="font-semibold text-stone-900">
+                    {connectedProperties.length > 0 ? "Verbunden" : "Nicht verbunden"}
+                  </p>
+                  <p className="text-xs text-stone-500">Nightsbridge API</p>
                 </div>
               </div>
               <div className="mt-4 space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-stone-500">Letzter Sync:</span>
-                  <span className="font-medium text-stone-700">{lastSync}</span>
-                </div>
                 <div className="flex justify-between">
                   <span className="text-stone-500">NB-Buchungen:</span>
                   <span className="font-medium text-stone-700">{nbBookings.length}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-stone-500">Verbundene Properties:</span>
-                  <span className="font-medium text-stone-700">{connectedProperties.length}</span>
+                  <span className="font-medium text-stone-700">{connectedProperties.length} / {properties.length}</span>
                 </div>
               </div>
             </CardContent>
@@ -107,8 +97,7 @@ export default function NightsbridgePage() {
                   <div className="flex items-center gap-2 mt-1">
                     <input
                       type="password"
-                      value="nb_live_xxxxxxxxxxxx"
-                      readOnly
+                      placeholder="Nightsbridge API Key eingeben..."
                       className="flex-1 text-sm border border-stone-300 rounded-lg px-3 py-1.5 bg-stone-50 text-stone-600 font-mono"
                     />
                     <Button variant="secondary" size="sm">
@@ -132,89 +121,80 @@ export default function NightsbridgePage() {
         {/* Connected Properties */}
         <Card>
           <CardHeader>
-            <CardTitle>Verbundene Properties</CardTitle>
+            <CardTitle>Properties & Nightsbridge-Verbindung</CardTitle>
             <CardDescription>Nightsbridge Property-IDs und Sync-Status</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-stone-100 text-xs text-stone-500 uppercase tracking-wider">
-                  <th className="px-5 py-3 text-left font-medium">Property</th>
-                  <th className="px-5 py-3 text-left font-medium">Nightsbridge ID</th>
-                  <th className="px-5 py-3 text-left font-medium">Typ</th>
-                  <th className="px-5 py-3 text-left font-medium">Status</th>
-                  <th className="px-5 py-3 text-left font-medium">NB-Buchungen</th>
-                  <th className="px-5 py-3 text-left font-medium"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-50">
-                {DEMO_PROPERTIES.map(property => {
-                  const isConnected = !!property.nightsbridge_property_id
-                  const propBookings = DEMO_BOOKINGS.filter(b => b.property_id === property.id && b.nightsbridge_booking_id)
-                  return (
-                    <tr key={property.id} className="hover:bg-stone-50">
-                      <td className="px-5 py-3 font-medium text-stone-900">{property.name}</td>
-                      <td className="px-5 py-3 font-mono text-xs text-stone-600">
-                        {property.nightsbridge_property_id || "–"}
-                      </td>
-                      <td className="px-5 py-3 text-stone-500 capitalize">{property.type}</td>
-                      <td className="px-5 py-3">
-                        {isConnected
-                          ? <Badge variant="success">Verbunden</Badge>
-                          : <Badge variant="neutral">Nicht verbunden</Badge>
-                        }
-                      </td>
-                      <td className="px-5 py-3 text-stone-600">{propBookings.length}</td>
-                      <td className="px-5 py-3">
-                        {isConnected && (
-                          <Button variant="ghost" size="sm">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            NB öffnen
-                          </Button>
-                        )}
-                        {!isConnected && (
-                          <Button variant="secondary" size="sm">
-                            <Link2 className="h-3.5 w-3.5" />
-                            Verbinden
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            {properties.length === 0 ? (
+              <p className="text-sm text-stone-500 px-5 py-8 text-center">Keine Properties vorhanden</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-stone-100 text-xs text-stone-500 uppercase tracking-wider">
+                    <th className="px-5 py-3 text-left font-medium">Property</th>
+                    <th className="px-5 py-3 text-left font-medium">Nightsbridge ID</th>
+                    <th className="px-5 py-3 text-left font-medium">Typ</th>
+                    <th className="px-5 py-3 text-left font-medium">Status</th>
+                    <th className="px-5 py-3 text-left font-medium">NB-Buchungen</th>
+                    <th className="px-5 py-3 text-left font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-50">
+                  {properties.map(property => {
+                    const isConnected = !!property.nightsbridge_property_id
+                    const propNbBookings = bookings.filter(b => b.property_id === property.id && b.nightsbridge_booking_id)
+                    return (
+                      <tr key={property.id} className="hover:bg-stone-50">
+                        <td className="px-5 py-3 font-medium text-stone-900">{property.name}</td>
+                        <td className="px-5 py-3 font-mono text-xs text-stone-600">
+                          {property.nightsbridge_property_id || "–"}
+                        </td>
+                        <td className="px-5 py-3 text-stone-500 capitalize">{property.property_type}</td>
+                        <td className="px-5 py-3">
+                          {isConnected
+                            ? <Badge variant="success">Verbunden</Badge>
+                            : <Badge variant="neutral">Nicht verbunden</Badge>
+                          }
+                        </td>
+                        <td className="px-5 py-3 text-stone-600">{propNbBookings.length}</td>
+                        <td className="px-5 py-3">
+                          {isConnected ? (
+                            <Button variant="ghost" size="sm">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                              NB öffnen
+                            </Button>
+                          ) : (
+                            <Button variant="secondary" size="sm">
+                              <Link2 className="h-3.5 w-3.5" />
+                              Verbinden
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
           </CardContent>
         </Card>
 
-        {/* Sync Log */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sync-Protokoll</CardTitle>
-            <CardDescription>Letzte Synchronisationsaktivitäten</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-stone-50">
-              {syncLog.map((entry, i) => (
-                <div key={i} className="flex items-start gap-3 px-5 py-3 hover:bg-stone-50">
-                  <div className="mt-0.5">
-                    {entry.status === "success" && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                    {entry.status === "warning" && <AlertCircle className="h-4 w-4 text-amber-500" />}
-                    {entry.status === "error" && <XCircle className="h-4 w-4 text-red-500" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-stone-800">{entry.action}</p>
-                    <p className="text-xs text-stone-500">{entry.details}</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-stone-400">
-                    <Clock className="h-3 w-3" />
-                    {entry.time}
-                  </div>
+        {connectedProperties.length === 0 && properties.length > 0 && (
+          <Card>
+            <CardContent className="pt-5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-stone-800">Keine Nightsbridge-Verbindung</p>
+                  <p className="text-xs text-stone-500 mt-1">
+                    Um Properties mit Nightsbridge zu verbinden, füge die Nightsbridge Property-ID in den Property-Einstellungen hinzu
+                    (Properties → Übersicht → Property bearbeiten → Nightsbridge ID).
+                  </p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

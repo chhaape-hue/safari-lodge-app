@@ -188,7 +188,7 @@ export function AvailabilityCalendar({ selectedPropertyId, onPropertyChange }: P
             }`}
           >
             <span className="mr-1.5">
-              {p.type === "lodge" ? "🏕️" : p.type === "houseboat" ? "🚢" : "⛺"}
+              {p.property_type === "lodge" ? "🏕️" : p.property_type === "houseboat" ? "🚢" : "⛺"}
             </span>
             {p.name}
             <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${

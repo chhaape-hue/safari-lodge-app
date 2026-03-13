@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useAuth, roleLabel, roleBadgeColor } from "@/lib/auth"
 import {
   LayoutDashboard,
   Building2,
@@ -14,58 +15,28 @@ import {
   RefreshCw,
   Mail,
   ChevronRight,
+  LogOut,
 } from "lucide-react"
 
 const navItems = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Properties & Zimmer",
-    href: "/properties",
-    icon: Building2,
-  },
-  {
-    label: "Buchungen",
-    href: "/bookings",
-    icon: CalendarDays,
-  },
-  {
-    label: "Kosten & Finanzen",
-    href: "/costs",
-    icon: DollarSign,
-  },
-  {
-    label: "Personal (HR)",
-    href: "/staff",
-    icon: Users,
-  },
-  {
-    label: "Berichte",
-    href: "/reports",
-    icon: BarChart3,
-  },
-  {
-    label: "Nightsbridge Sync",
-    href: "/nightsbridge",
-    icon: RefreshCw,
-  },
-  {
-    label: "E-Mail Marketing",
-    href: "/email",
-    icon: Mail,
-  },
-  {
-    label: "Einstellungen",
-    href: "/settings",
-    icon: Settings,
-  },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Properties & Zimmer", href: "/properties", icon: Building2 },
+  { label: "Buchungen", href: "/bookings", icon: CalendarDays },
+  { label: "Kosten & Finanzen", href: "/costs", icon: DollarSign },
+  { label: "Personal (HR)", href: "/staff", icon: Users },
+  { label: "Berichte", href: "/reports", icon: BarChart3 },
+  { label: "Nightsbridge Sync", href: "/nightsbridge", icon: RefreshCw },
+  { label: "E-Mail Marketing", href: "/email", icon: Mail },
+  { label: "Einstellungen", href: "/settings", icon: Settings },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { profile, signOut } = useAuth()
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    : profile?.email?.slice(0, 2).toUpperCase() ?? "?"
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-[#3D2010]" style={{ background: "linear-gradient(180deg, #2C1A0E 0%, #3D2010 100%)" }}>
@@ -104,9 +75,30 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-[#5C3A1E]/50 px-4 py-3">
-        <p className="text-xs text-[#7A5535] text-center">untouched-safaris.com</p>
+      {/* User info + Logout */}
+      <div className="border-t border-[#5C3A1E]/50 px-3 py-3 space-y-2">
+        {profile && (
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
+            <div className="h-8 w-8 rounded-full bg-[#C8956B] flex items-center justify-center shrink-0">
+              <span className="text-xs font-bold text-white">{initials}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold text-[#F5E6D0] truncate">
+                {profile.full_name || profile.email}
+              </p>
+              <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", roleBadgeColor(profile.role))}>
+                {roleLabel(profile.role)}
+              </span>
+            </div>
+          </div>
+        )}
+        <button
+          onClick={signOut}
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-[#C4A882] hover:bg-[#5C3A1E]/60 hover:text-[#F5E6D0] transition-colors"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Abmelden
+        </button>
       </div>
     </aside>
   )
