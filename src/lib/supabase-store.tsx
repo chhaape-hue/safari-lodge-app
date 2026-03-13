@@ -287,6 +287,7 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
   })
 
   const reload = useCallback(async () => {
+    console.log("[store] reload start")
     setState(s => ({ ...s, loading: true, error: null }))
     try {
       // Phase 1: critical data – show UI as fast as possible
@@ -295,9 +296,12 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
         supabase.from("rooms").select("*").order("room_number"),
       ])
 
+      console.log("[store] phase1 done – props.error:", props.error, "rows:", props.data?.length)
+
       const criticalError = [props, rooms].find(r => r.error)
       if (criticalError?.error) throw criticalError.error
 
+      console.log("[store] setting loading:false")
       setState(s => ({
         ...s,
         properties: (props.data || []).map(mapProperty),
@@ -341,12 +345,15 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
   const userId = session?.user?.id
 
   useEffect(() => {
+    console.log("[store] effect fired – authLoading:", authLoading, "userId:", userId)
     // Wait until AuthProvider has resolved its own loading state
     if (authLoading) return
 
     if (userId) {
-      reload()
+      console.log("[store] calling reload()")
+      reload().then(() => console.log("[store] reload() resolved")).catch(e => console.error("[store] reload() threw", e))
     } else {
+      console.log("[store] no user – clearing state")
       setState({
         properties: [], rooms: [], bookings: [], guests: [], costs: [], staff: [],
         stockItems: [], maintenanceTasks: [],
