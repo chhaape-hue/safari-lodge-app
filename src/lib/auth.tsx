@@ -25,7 +25,6 @@ interface AuthState {
 interface AuthActions {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
-  // Role checks
   isAdmin: boolean
   canManageBookings: boolean
   canViewFinancials: boolean
@@ -37,42 +36,97 @@ type Auth = AuthState & AuthActions
 
 const AuthContext = createContext<Auth | null>(null)
 
+// Read the stored Supabase session directly from localStorage.
+// This is synchronous and requires zero network I/O.
+// Supabase v2 stores the session at key "sb-<project-ref>-auth-token".
+function readStoredSession(): { user: User; session: Session } | null {
+  if (typeof window === "undefined") return null
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith("sb-") && key?.endsWith("-auth-token")) {
+        const raw = localStorage.getItem(key)
+        if (!raw) break
+        const stored = JSON.parse(raw)
+        if (stored?.user?.id && stored?.refresh_token) {
+          return { user: stored.user as User, session: stored as Session }
+        }
+        break
+      }
+    }
+  } catch {
+    // localStorage unavailable (e.g. private browsing with blocked storage)
+  }
+  return null
+}
+
+async function fetchProfile(userId: string): Promise<UserProfile | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .single()
+  return data as UserProfile | null
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null, profile: null, session: null, loading: true,
   })
 
-  async function loadProfile(userId: string) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single()
-    return data as UserProfile | null
-  }
-
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await loadProfile(session.user.id)
-        setState({ user: session.user, profile, session, loading: false })
-      } else {
-        setState(s => ({ ...s, loading: false }))
-      }
-    })
+    // ── Step 1: instant init from localStorage ────────────────────────────
+    // Clears the spinner before any network activity, even if the access
+    // token is expired (Supabase will refresh it in the background).
+    const stored = readStoredSession()
+    if (stored) {
+      console.log("[auth] instant init from localStorage for", stored.user.email)
+      setState(s => ({ ...s, user: stored.user, session: stored.session, loading: false }))
+      fetchProfile(stored.user.id)
+        .then(profile => setState(s => s.user?.id === stored.user.id ? { ...s, profile } : s))
+        .catch(() => {})
+    } else {
+      console.log("[auth] no stored session found in localStorage")
+    }
 
-    // Listen to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const profile = await loadProfile(session.user.id)
-        setState({ user: session.user, profile, session, loading: false })
-      } else {
+    // ── Step 2: safety timeout ────────────────────────────────────────────
+    // If neither localStorage nor Supabase resolves within 5 s, force-clear
+    // loading so the user is never stuck.  AuthGate will redirect to /login.
+    const safety = setTimeout(() => {
+      console.warn("[auth] safety timeout fired – forcing loading:false")
+      setState(s => s.loading ? { ...s, loading: false } : s)
+    }, 5000)
+
+    // ── Step 3: Supabase auth events ──────────────────────────────────────
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[auth] onAuthStateChange:", event, session?.user?.email ?? "null")
+      clearTimeout(safety)
+
+      if (event === "SIGNED_OUT") {
         setState({ user: null, profile: null, session: null, loading: false })
+        return
+      }
+
+      if (!session?.user) {
+        setState(s => ({ ...s, loading: false }))
+        return
+      }
+
+      setState(s => ({ ...s, user: session.user, session, loading: false }))
+
+      // Load profile on fresh sign-in, or on INITIAL_SESSION if localStorage
+      // didn't already kick off a profile load.
+      if (event === "SIGNED_IN" || (event === "INITIAL_SESSION" && !stored)) {
+        fetchProfile(session.user.id)
+          .then(profile => setState(s => s.user?.id === session.user.id ? { ...s, profile } : s))
+          .catch(() => {})
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(safety)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {

@@ -4,13 +4,13 @@ import { useState, useEffect } from "react"
 import { Topbar } from "@/components/layout/topbar"
 import { Button } from "@/components/ui/button"
 import { useStore } from "@/lib/store"
-import { LayoutGrid, CalendarDays, Plus } from "lucide-react"
+import { LayoutGrid, CalendarDays, Plus, Loader2 } from "lucide-react"
 import { PropertyGridView } from "@/components/modules/property-grid-view"
 import { AvailabilityCalendar } from "@/components/modules/availability-calendar"
 import Link from "next/link"
 
 export default function PropertiesPage() {
-  const { properties } = useStore()
+  const { properties, loading, error } = useStore()
   const [view, setView] = useState<"calendar" | "grid">("calendar")
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>("")
 
@@ -20,6 +20,11 @@ export default function PropertiesPage() {
       setSelectedPropertyId(properties[0].id)
     }
   }, [properties, selectedPropertyId])
+
+  // Switch to grid view automatically when no properties so user can add one
+  useEffect(() => {
+    if (!loading && properties.length === 0) setView("grid")
+  }, [loading, properties.length])
 
   return (
     <div>
@@ -62,14 +67,23 @@ export default function PropertiesPage() {
         }
       />
 
-      {view === "calendar" ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-32 gap-2 text-stone-400">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Loading properties…</span>
+        </div>
+      ) : error ? (
+        <div className="p-6">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+        </div>
+      ) : view === "calendar" ? (
         selectedPropertyId ? (
           <AvailabilityCalendar
             selectedPropertyId={selectedPropertyId}
             onPropertyChange={setSelectedPropertyId}
           />
         ) : (
-          <div className="p-12 text-center text-stone-500 text-sm">Loading properties...</div>
+          <PropertyGridView />
         )
       ) : (
         <PropertyGridView />
