@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react"
 import { supabase } from "./supabase"
+import { useAuth } from "./auth"
 import type { Property, Room, Booking, Guest, CostEntry, StaffMember } from "@/types"
 
 // ─── Stock & Maintenance Types ─────────────────────────────────────────────
@@ -334,39 +335,26 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Only load data once there is an authenticated session.
-  // Using onAuthStateChange ensures we don't fire unauthenticated requests
-  // that would be blocked by RLS before the Supabase client has restored its token.
+  // Derive session from AuthProvider (which handles its own auth subscriptions).
+  // This avoids duplicate getSession/onAuthStateChange calls and race conditions.
+  const { session, loading: authLoading } = useAuth()
+  const userId = session?.user?.id
+
   useEffect(() => {
-    let loaded = false
+    // Wait until AuthProvider has resolved its own loading state
+    if (authLoading) return
 
-    // Handle initial session (already stored in localStorage)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        loaded = true
-        reload()
-      } else {
-        setState(s => ({ ...s, loading: false }))
-      }
-    })
-
-    // Handle auth state changes (login / logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && !loaded) {
-        loaded = true
-        reload()
-      } else if (!session) {
-        loaded = false
-        setState({
-          properties: [], rooms: [], bookings: [], guests: [], costs: [], staff: [],
-          stockItems: [], maintenanceTasks: [],
-          loading: false, error: null,
-        })
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [reload])
+    if (userId) {
+      reload()
+    } else {
+      setState({
+        properties: [], rooms: [], bookings: [], guests: [], costs: [], staff: [],
+        stockItems: [], maintenanceTasks: [],
+        loading: false, error: null,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, authLoading])
 
   // ── Bookings ──
 
