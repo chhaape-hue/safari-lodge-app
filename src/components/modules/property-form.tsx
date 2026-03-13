@@ -13,11 +13,11 @@ interface Props {
 }
 
 const propertyTypes: { value: PropertyType; label: string; icon: string }[] = [
-  { value: "lodge",      label: "Lodge",        icon: "🏕️" },
-  { value: "houseboat",  label: "Hausboot",      icon: "🚢" },
-  { value: "camp",       label: "Camp",          icon: "⛺" },
-  { value: "villa",      label: "Villa",         icon: "🏡" },
-  { value: "hotel",      label: "Hotel",         icon: "🏨" },
+  { value: "lodge",      label: "Lodge",     icon: "🏕️" },
+  { value: "houseboat",  label: "Houseboat", icon: "🚢" },
+  { value: "camp",       label: "Camp",      icon: "⛺" },
+  { value: "villa",      label: "Villa",     icon: "🏡" },
+  { value: "hotel",      label: "Hotel",     icon: "🏨" },
 ]
 
 const CURRENCY_OPTIONS = ["BWP", "NAD", "ZAR", "USD", "EUR"]
@@ -52,8 +52,8 @@ export function PropertyForm({ property, onClose }: Props) {
 
   function validate() {
     const e: Record<string, string> = {}
-    if (!name.trim()) e.name = "Name erforderlich"
-    if (!location.trim()) e.location = "Standort erforderlich"
+    if (!name.trim()) e.name = "Name is required"
+    if (!location.trim()) e.location = "Location is required"
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -78,7 +78,6 @@ export function PropertyForm({ property, onClose }: Props) {
       latitude: latitude ? parseFloat(latitude) : undefined,
       longitude: longitude ? parseFloat(longitude) : undefined,
     }
-    // Note: updateProperty will be added when needed; for now only add is supported
     await addProperty(data)
     onClose()
   }
@@ -89,7 +88,7 @@ export function PropertyForm({ property, onClose }: Props) {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-[#FAF7F2] rounded-t-2xl">
           <h2 className="text-lg font-bold text-stone-900">
-            {isEdit ? `Property bearbeiten` : "Neue Property / Unterkunft"}
+            {isEdit ? "Edit Property" : "New Property / Accommodation"}
           </h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-stone-200 transition-colors">
             <X className="h-4 w-4 text-stone-500" />
@@ -99,7 +98,7 @@ export function PropertyForm({ property, onClose }: Props) {
         <div className="p-6 space-y-4">
           {/* Type selection */}
           <div>
-            <label className={labelCls}>Art der Unterkunft</label>
+            <label className={labelCls}>Property Type</label>
             <div className="grid grid-cols-5 gap-2">
               {propertyTypes.map(t => (
                 <button key={t.value} type="button" onClick={() => setType(t.value)}
@@ -119,22 +118,22 @@ export function PropertyForm({ property, onClose }: Props) {
           <div>
             <label className={labelCls}>Name *</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)}
-              placeholder="z.B. Okavango Delta Lodge" className={inputCls(errors.name)} />
+              placeholder="e.g. Okavango Delta Lodge" className={inputCls(errors.name)} />
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
           </div>
 
           {/* Location + Country */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className={labelCls}>Standort / Region *</label>
+              <label className={labelCls}>Location / Region *</label>
               <input type="text" value={location} onChange={e => setLocation(e.target.value)}
                 placeholder="Okavango Delta, Maun..." className={inputCls(errors.location)} />
               {errors.location && <p className="text-xs text-red-500 mt-1">{errors.location}</p>}
             </div>
             <div>
-              <label className={labelCls}>Land</label>
+              <label className={labelCls}>Country</label>
               <select value={country} onChange={e => setCountry(e.target.value)} className={inputCls()}>
-                {["Botswana","Namibia","Südafrika","Sambia","Zimbabwe","Tansania","Kenia"].map(c =>
+                {["Botswana","Namibia","South Africa","Zambia","Zimbabwe","Tanzania","Kenya"].map(c =>
                   <option key={c}>{c}</option>
                 )}
               </select>
@@ -144,7 +143,7 @@ export function PropertyForm({ property, onClose }: Props) {
           {/* Currency + Status */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Währung</label>
+              <label className={labelCls}>Currency</label>
               <select value={currency} onChange={e => setCurrency(e.target.value)} className={inputCls()}>
                 {CURRENCY_OPTIONS.map(c => <option key={c}>{c}</option>)}
               </select>
@@ -152,9 +151,9 @@ export function PropertyForm({ property, onClose }: Props) {
             <div>
               <label className={labelCls}>Status</label>
               <select value={status} onChange={e => setStatus(e.target.value as PropertyStatus)} className={inputCls()}>
-                <option value="active">Aktiv</option>
-                <option value="inactive">Inaktiv</option>
-                <option value="maintenance">Wartung</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="maintenance">Maintenance</option>
               </select>
             </div>
           </div>
@@ -162,11 +161,11 @@ export function PropertyForm({ property, onClose }: Props) {
           {/* Check-in/out times */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Check-in Zeit</label>
+              <label className={labelCls}>Check-in Time</label>
               <input type="time" value={checkInTime} onChange={e => setCheckInTime(e.target.value)} className={inputCls()} />
             </div>
             <div>
-              <label className={labelCls}>Check-out Zeit</label>
+              <label className={labelCls}>Check-out Time</label>
               <input type="time" value={checkOutTime} onChange={e => setCheckOutTime(e.target.value)} className={inputCls()} />
             </div>
           </div>
@@ -174,12 +173,12 @@ export function PropertyForm({ property, onClose }: Props) {
           {/* Contact */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Kontakt E-Mail</label>
+              <label className={labelCls}>Contact Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="info@lodge.com" className={inputCls()} />
             </div>
             <div>
-              <label className={labelCls}>Telefon</label>
+              <label className={labelCls}>Phone</label>
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                 placeholder="+267 ..." className={inputCls()} />
             </div>
@@ -193,7 +192,7 @@ export function PropertyForm({ property, onClose }: Props) {
                 placeholder="https://..." className={inputCls()} />
             </div>
             <div>
-              <label className={labelCls}>Nightsbridge Property-ID</label>
+              <label className={labelCls}>Nightsbridge Property ID</label>
               <input type="text" value={nbPropertyId} onChange={e => setNbPropertyId(e.target.value)}
                 placeholder="NB-PROP-..." className={inputCls()} />
             </div>
@@ -202,12 +201,12 @@ export function PropertyForm({ property, onClose }: Props) {
           {/* GPS */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Breitengrad (lat)</label>
+              <label className={labelCls}>Latitude</label>
               <input type="number" value={latitude} onChange={e => setLatitude(e.target.value)}
                 placeholder="-19.9..." step="0.0001" className={inputCls()} />
             </div>
             <div>
-              <label className={labelCls}>Längengrad (lon)</label>
+              <label className={labelCls}>Longitude</label>
               <input type="number" value={longitude} onChange={e => setLongitude(e.target.value)}
                 placeholder="23.4..." step="0.0001" className={inputCls()} />
             </div>
@@ -215,17 +214,17 @@ export function PropertyForm({ property, onClose }: Props) {
 
           {/* Description */}
           <div>
-            <label className={labelCls}>Beschreibung</label>
+            <label className={labelCls}>Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)}
-              rows={3} placeholder="Kurzbeschreibung der Unterkunft..."
+              rows={3} placeholder="Brief description of the accommodation..."
               className={`${inputCls()} resize-none`} />
           </div>
         </div>
 
         <div className="flex justify-between px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
-          <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Wird gespeichert..." : isEdit ? "Änderungen speichern ✓" : "Property anlegen ✓"}
+            {saving ? "Saving..." : isEdit ? "Save Changes ✓" : "Create Property ✓"}
           </Button>
         </div>
       </div>

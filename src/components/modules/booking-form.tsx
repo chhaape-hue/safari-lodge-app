@@ -14,11 +14,11 @@ interface Props {
 }
 
 const sourceOptions: { value: BookingSource; label: string }[] = [
-  { value: "direct", label: "Direkt" },
+  { value: "direct", label: "Direct" },
   { value: "nightsbridge", label: "Nightsbridge" },
-  { value: "agent", label: "Reisebüro" },
-  { value: "email", label: "E-Mail" },
-  { value: "phone", label: "Telefon" },
+  { value: "agent", label: "Travel Agent" },
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
   { value: "walk_in", label: "Walk-in" },
 ]
 
@@ -65,21 +65,21 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
 
   function validateStep1() {
     const e: Record<string, string> = {}
-    if (!propertyId) e.property = "Bitte Property wählen"
-    if (!roomId) e.room = "Bitte Zimmer wählen"
-    if (!checkIn) e.checkIn = "Check-in Datum erforderlich"
-    if (!checkOut) e.checkOut = "Check-out Datum erforderlich"
-    if (checkIn && checkOut && checkOut <= checkIn) e.checkOut = "Check-out muss nach Check-in sein"
+    if (!propertyId) e.property = "Please select a property"
+    if (!roomId) e.room = "Please select a room"
+    if (!checkIn) e.checkIn = "Check-in date is required"
+    if (!checkOut) e.checkOut = "Check-out date is required"
+    if (checkIn && checkOut && checkOut <= checkIn) e.checkOut = "Check-out must be after check-in"
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   function validateStep2() {
     const e: Record<string, string> = {}
-    if (guestMode === "existing" && !existingGuestId) e.guest = "Bitte Gast auswählen"
+    if (guestMode === "existing" && !existingGuestId) e.guest = "Please select a guest"
     if (guestMode === "new") {
-      if (!firstName.trim()) e.firstName = "Vorname erforderlich"
-      if (!lastName.trim()) e.lastName = "Nachname erforderlich"
+      if (!firstName.trim()) e.firstName = "First name is required"
+      if (!lastName.trim()) e.lastName = "Last name is required"
     }
     setErrors(e)
     return Object.keys(e).length === 0
@@ -87,7 +87,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
 
   async function handleSave() {
     if (!totalAmount) {
-      setErrors({ totalAmount: "Betrag erforderlich" })
+      setErrors({ totalAmount: "Amount is required" })
       return
     }
     setSaving(true)
@@ -135,8 +135,8 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-[#FAF7F2] rounded-t-2xl">
           <div>
-            <h2 className="text-lg font-bold text-stone-900">Neue Buchung</h2>
-            <p className="text-xs text-stone-500">Schritt {step} von 3</p>
+            <h2 className="text-lg font-bold text-stone-900">New Booking</h2>
+            <p className="text-xs text-stone-500">Step {step} of 3</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-stone-200 transition-colors">
             <X className="h-4 w-4 text-stone-500" />
@@ -146,9 +146,9 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
         {/* Step indicators */}
         <div className="flex px-6 pt-4 gap-2">
           {[
-            { n: 1, label: "Zimmer & Datum", icon: BedDouble },
-            { n: 2, label: "Gast", icon: User },
-            { n: 3, label: "Details & Betrag", icon: DollarSign },
+            { n: 1, label: "Room & Dates", icon: BedDouble },
+            { n: 2, label: "Guest", icon: User },
+            { n: 3, label: "Details & Amount", icon: DollarSign },
           ].map(s => (
             <div key={s.n} className="flex-1">
               <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -166,14 +166,14 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
         </div>
 
         <div className="p-6 space-y-4">
-          {/* ── Step 1: Zimmer & Datum ── */}
+          {/* ── Step 1: Room & Dates ── */}
           {step === 1 && (
             <>
               <div>
                 <label className={labelCls}>Property *</label>
                 <select value={propertyId} onChange={e => { setPropertyId(e.target.value); setRoomId("") }}
                   className={inputCls(errors.property)}>
-                  <option value="">Bitte wählen...</option>
+                  <option value="">Please select...</option>
                   {properties.filter(p => p.status === "active").map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
@@ -182,14 +182,14 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
               </div>
 
               <div>
-                <label className={labelCls}>Zimmer *</label>
+                <label className={labelCls}>Room *</label>
                 <select value={roomId} onChange={e => setRoomId(e.target.value)}
                   disabled={!propertyId}
                   className={inputCls(errors.room)}>
-                  <option value="">Bitte wählen...</option>
+                  <option value="">Please select...</option>
                   {availableRooms.map(r => (
                     <option key={r.id} value={r.id}>
-                      {r.name} (#{r.room_number}) – {r.capacity} Pers. – BWP {r.base_price_per_night}/N
+                      {r.name} (#{r.room_number}) – {r.capacity} guests – BWP {r.base_price_per_night}/night
                     </option>
                   ))}
                 </select>
@@ -215,7 +215,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
               {nights > 0 && selectedRoom && (
                 <div className="bg-[#FAF7F2] border border-[#6B4226]/20 rounded-lg px-4 py-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-stone-600">{nights} Nächte × BWP {selectedRoom.base_price_per_night}</span>
+                    <span className="text-stone-600">{nights} nights × BWP {selectedRoom.base_price_per_night}</span>
                     <span className="font-bold text-[#6B4226]">BWP {suggestedAmount.toLocaleString()}</span>
                   </div>
                 </div>
@@ -223,13 +223,13 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Erwachsene</label>
+                  <label className={labelCls}>Adults</label>
                   <select value={adults} onChange={e => setAdults(Number(e.target.value))} className={inputCls()}>
                     {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Kinder</label>
+                  <label className={labelCls}>Children</label>
                   <select value={children} onChange={e => setChildren(Number(e.target.value))} className={inputCls()}>
                     {[0,1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}
                   </select>
@@ -238,7 +238,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
             </>
           )}
 
-          {/* ── Step 2: Gast ── */}
+          {/* ── Step 2: Guest ── */}
           {step === 2 && (
             <>
               <div className="flex gap-2">
@@ -248,7 +248,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
                     guestMode === "new" ? "bg-[#6B4226] text-white border-[#6B4226]" : "bg-white text-stone-600 border-stone-300"
                   }`}
                 >
-                  Neuer Gast
+                  New Guest
                 </button>
                 <button
                   onClick={() => setGuestMode("existing")}
@@ -256,16 +256,16 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
                     guestMode === "existing" ? "bg-[#6B4226] text-white border-[#6B4226]" : "bg-white text-stone-600 border-stone-300"
                   }`}
                 >
-                  Bestehender Gast ({guests.length})
+                  Existing Guest ({guests.length})
                 </button>
               </div>
 
               {guestMode === "existing" ? (
                 <div>
-                  <label className={labelCls}>Gast auswählen *</label>
+                  <label className={labelCls}>Select Guest *</label>
                   <select value={existingGuestId} onChange={e => setExistingGuestId(e.target.value)}
                     className={inputCls(errors.guest)}>
-                    <option value="">Bitte wählen...</option>
+                    <option value="">Please select...</option>
                     {guests.map(g => (
                       <option key={g.id} value={g.id}>
                         {g.first_name} {g.last_name}{g.email ? ` – ${g.email}` : ""}
@@ -278,33 +278,33 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={labelCls}>Vorname *</label>
+                      <label className={labelCls}>First Name *</label>
                       <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)}
-                        placeholder="Hans" className={inputCls(errors.firstName)} />
+                        placeholder="John" className={inputCls(errors.firstName)} />
                       {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
                     </div>
                     <div>
-                      <label className={labelCls}>Nachname *</label>
+                      <label className={labelCls}>Last Name *</label>
                       <input type="text" value={lastName} onChange={e => setLastName(e.target.value)}
-                        placeholder="Müller" className={inputCls(errors.lastName)} />
+                        placeholder="Smith" className={inputCls(errors.lastName)} />
                       {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
                     </div>
                   </div>
                   <div>
-                    <label className={labelCls}>E-Mail</label>
+                    <label className={labelCls}>Email</label>
                     <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                      placeholder="hans@example.com" className={inputCls()} />
+                      placeholder="john@example.com" className={inputCls()} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className={labelCls}>Telefon</label>
+                      <label className={labelCls}>Phone</label>
                       <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-                        placeholder="+49 171 ..." className={inputCls()} />
+                        placeholder="+27 ..." className={inputCls()} />
                     </div>
                     <div>
-                      <label className={labelCls}>Nationalität</label>
+                      <label className={labelCls}>Nationality</label>
                       <input type="text" value={nationality} onChange={e => setNationality(e.target.value)}
-                        placeholder="Deutsch" className={inputCls()} />
+                        placeholder="South African" className={inputCls()} />
                     </div>
                   </div>
                 </>
@@ -316,7 +316,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
           {step === 3 && (
             <>
               <div>
-                <label className={labelCls}>Buchungsquelle</label>
+                <label className={labelCls}>Booking Source</label>
                 <select value={source} onChange={e => setSource(e.target.value as BookingSource)}
                   className={inputCls()}>
                   {sourceOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -325,7 +325,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Gesamtbetrag (BWP) *</label>
+                  <label className={labelCls}>Total Amount (BWP) *</label>
                   <input
                     type="number" value={totalAmount}
                     onChange={e => setTotalAmount(e.target.value)}
@@ -337,13 +337,13 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
                       onClick={() => setTotalAmount(String(suggestedAmount))}
                       className="text-xs text-[#6B4226] hover:underline mt-1"
                     >
-                      Vorschlag übernehmen: BWP {suggestedAmount.toLocaleString()}
+                      Use suggested: BWP {suggestedAmount.toLocaleString()}
                     </button>
                   )}
                   {errors.totalAmount && <p className="text-xs text-red-500 mt-1">{errors.totalAmount}</p>}
                 </div>
                 <div>
-                  <label className={labelCls}>Bereits bezahlt (BWP)</label>
+                  <label className={labelCls}>Amount Paid (BWP)</label>
                   <input type="number" value={paidAmount} onChange={e => setPaidAmount(e.target.value)}
                     placeholder="0" className={inputCls()} />
                 </div>
@@ -351,36 +351,36 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
 
               {source === "nightsbridge" && (
                 <div>
-                  <label className={labelCls}>Nightsbridge Buchungs-ID</label>
+                  <label className={labelCls}>Nightsbridge Booking ID</label>
                   <input type="text" value={nbBookingId} onChange={e => setNbBookingId(e.target.value)}
                     placeholder="NB-12345" className={inputCls()} />
                 </div>
               )}
 
               <div>
-                <label className={labelCls}>Notizen / Sonderwünsche</label>
+                <label className={labelCls}>Notes / Special Requests</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)}
-                  rows={3} placeholder="Allergien, Sonderwünsche, interne Notizen..."
+                  rows={3} placeholder="Allergies, special requests, internal notes..."
                   className={`${inputCls()} resize-none`} />
               </div>
 
               {/* Summary */}
               <div className="bg-[#FAF7F2] border border-[#6B4226]/20 rounded-lg p-4 space-y-2 text-sm">
-                <p className="font-semibold text-stone-700 mb-2">Zusammenfassung</p>
+                <p className="font-semibold text-stone-700 mb-2">Summary</p>
                 <div className="flex justify-between text-stone-600">
                   <span>Property</span>
                   <span className="font-medium">{properties.find(p => p.id === propertyId)?.name}</span>
                 </div>
                 <div className="flex justify-between text-stone-600">
-                  <span>Zimmer</span>
+                  <span>Room</span>
                   <span className="font-medium">{selectedRoom?.name}</span>
                 </div>
                 <div className="flex justify-between text-stone-600">
-                  <span>Zeitraum</span>
+                  <span>Period</span>
                   <span className="font-medium">{checkIn} → {checkOut} ({nights}N)</span>
                 </div>
                 <div className="flex justify-between text-stone-600">
-                  <span>Gast</span>
+                  <span>Guest</span>
                   <span className="font-medium">
                     {guestMode === "new" ? `${firstName} ${lastName}` : guests.find(g => g.id === existingGuestId)
                       ? `${guests.find(g => g.id === existingGuestId)?.first_name} ${guests.find(g => g.id === existingGuestId)?.last_name}` : "–"}
@@ -388,7 +388,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
                 </div>
                 {totalAmount && (
                   <div className="flex justify-between font-bold text-stone-800 border-t border-stone-200 pt-2 mt-2">
-                    <span>Gesamtbetrag</span>
+                    <span>Total</span>
                     <span className="text-[#6B4226]">BWP {parseFloat(totalAmount).toLocaleString()}</span>
                   </div>
                 )}
@@ -400,7 +400,7 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
         {/* Footer buttons */}
         <div className="flex justify-between items-center px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
           <Button variant="ghost" onClick={step === 1 ? onClose : () => setStep(s => (s - 1) as 1 | 2 | 3)}>
-            {step === 1 ? "Abbrechen" : "← Zurück"}
+            {step === 1 ? "Cancel" : "← Back"}
           </Button>
           {step < 3 ? (
             <Button onClick={() => {
@@ -409,11 +409,11 @@ export function BookingForm({ onClose, prefillRoomId, prefillPropertyId, prefill
               setStep(s => (s + 1) as 2 | 3)
               setErrors({})
             }}>
-              Weiter →
+              Next →
             </Button>
           ) : (
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? "Wird gespeichert..." : "Buchung speichern ✓"}
+              {saving ? "Saving..." : "Save Booking ✓"}
             </Button>
           )}
         </div>

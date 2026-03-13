@@ -10,20 +10,20 @@ interface Props { onClose: () => void }
 
 const departments: { value: Department; label: string }[] = [
   { value: "management", label: "Management" },
-  { value: "reception", label: "Rezeption" },
+  { value: "reception", label: "Reception" },
   { value: "guides", label: "Guides" },
-  { value: "kitchen", label: "Küche" },
+  { value: "kitchen", label: "Kitchen" },
   { value: "housekeeping", label: "Housekeeping" },
-  { value: "maintenance", label: "Wartung & Technik" },
-  { value: "logistics", label: "Logistik" },
-  { value: "security", label: "Sicherheit" },
+  { value: "maintenance", label: "Maintenance & Technical" },
+  { value: "logistics", label: "Logistics" },
+  { value: "security", label: "Security" },
 ]
 
 const employmentTypes: { value: EmploymentType; label: string }[] = [
-  { value: "full_time", label: "Vollzeit" },
-  { value: "part_time", label: "Teilzeit" },
-  { value: "seasonal", label: "Saisonal" },
-  { value: "contractor", label: "Freiberuflich" },
+  { value: "full_time", label: "Full-time" },
+  { value: "part_time", label: "Part-time" },
+  { value: "seasonal", label: "Seasonal" },
+  { value: "contractor", label: "Contractor" },
 ]
 
 export function StaffForm({ onClose }: Props) {
@@ -54,11 +54,11 @@ export function StaffForm({ onClose }: Props) {
 
   function validate() {
     const e: Record<string, string> = {}
-    if (!firstName.trim()) e.firstName = "Vorname erforderlich"
-    if (!lastName.trim()) e.lastName = "Nachname erforderlich"
-    if (!position.trim()) e.position = "Position erforderlich"
-    if (!salary || isNaN(parseFloat(salary))) e.salary = "Gültiges Gehalt erforderlich"
-    if (!startDate) e.startDate = "Eintrittsdatum erforderlich"
+    if (!firstName.trim()) e.firstName = "First name is required"
+    if (!lastName.trim()) e.lastName = "Last name is required"
+    if (!position.trim()) e.position = "Position is required"
+    if (!salary || isNaN(parseFloat(salary))) e.salary = "Valid salary is required"
+    if (!startDate) e.startDate = "Start date is required"
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -91,7 +91,7 @@ export function StaffForm({ onClose }: Props) {
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-[#FAF7F2] rounded-t-2xl">
-          <h2 className="text-lg font-bold text-stone-900">Mitarbeiter hinzufügen</h2>
+          <h2 className="text-lg font-bold text-stone-900">Add Staff Member</h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-stone-200 transition-colors">
             <X className="h-4 w-4 text-stone-500" />
           </button>
@@ -100,13 +100,13 @@ export function StaffForm({ onClose }: Props) {
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Vorname *</label>
+              <label className={labelCls}>First Name *</label>
               <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)}
                 placeholder="Thabo" className={inputCls(errors.firstName)} />
               {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>}
             </div>
             <div>
-              <label className={labelCls}>Nachname *</label>
+              <label className={labelCls}>Last Name *</label>
               <input type="text" value={lastName} onChange={e => setLastName(e.target.value)}
                 placeholder="Kgosi" className={inputCls(errors.lastName)} />
               {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>}
@@ -115,12 +115,12 @@ export function StaffForm({ onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>E-Mail</label>
+              <label className={labelCls}>Email</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="email@example.com" className={inputCls()} />
             </div>
             <div>
-              <label className={labelCls}>Telefon</label>
+              <label className={labelCls}>Phone</label>
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                 placeholder="+267 ..." className={inputCls()} />
             </div>
@@ -128,7 +128,7 @@ export function StaffForm({ onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Abteilung *</label>
+              <label className={labelCls}>Department *</label>
               <select value={department} onChange={e => setDepartment(e.target.value as Department)} className={inputCls()}>
                 {departments.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
               </select>
@@ -136,7 +136,7 @@ export function StaffForm({ onClose }: Props) {
             <div>
               <label className={labelCls}>Position *</label>
               <input type="text" value={position} onChange={e => setPosition(e.target.value)}
-                placeholder="z.B. Lodge Manager" className={inputCls(errors.position)} />
+                placeholder="e.g. Lodge Manager" className={inputCls(errors.position)} />
               {errors.position && <p className="text-xs text-red-500 mt-1">{errors.position}</p>}
             </div>
           </div>
@@ -145,12 +145,12 @@ export function StaffForm({ onClose }: Props) {
             <div>
               <label className={labelCls}>Property</label>
               <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inputCls()}>
-                <option value="">Alle Properties</option>
+                <option value="">All Properties</option>
                 {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Anstellungsart</label>
+              <label className={labelCls}>Employment Type</label>
               <select value={employmentType} onChange={e => setEmploymentType(e.target.value as EmploymentType)} className={inputCls()}>
                 {employmentTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
@@ -159,13 +159,13 @@ export function StaffForm({ onClose }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Eintritt *</label>
+              <label className={labelCls}>Start Date *</label>
               <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                 className={inputCls(errors.startDate)} />
             </div>
             {(employmentType === "seasonal" || employmentType === "contractor") && (
               <div>
-                <label className={labelCls}>Ende (optional)</label>
+                <label className={labelCls}>End Date (optional)</label>
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className={inputCls()} />
               </div>
             )}
@@ -173,13 +173,13 @@ export function StaffForm({ onClose }: Props) {
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className={labelCls}>Gehalt / Monat *</label>
+              <label className={labelCls}>Monthly Salary *</label>
               <input type="number" value={salary} onChange={e => setSalary(e.target.value)}
                 placeholder="0.00" className={inputCls(errors.salary)} />
               {errors.salary && <p className="text-xs text-red-500 mt-1">{errors.salary}</p>}
             </div>
             <div>
-              <label className={labelCls}>Währung</label>
+              <label className={labelCls}>Currency</label>
               <select value={currency} onChange={e => setCurrency(e.target.value)} className={inputCls()}>
                 <option>BWP</option><option>NAD</option><option>ZAR</option><option>USD</option>
               </select>
@@ -187,23 +187,23 @@ export function StaffForm({ onClose }: Props) {
           </div>
 
           <div>
-            <label className={labelCls}>Personalausweis / Passnummer</label>
+            <label className={labelCls}>ID / Passport Number</label>
             <input type="text" value={idNumber} onChange={e => setIdNumber(e.target.value)}
-              placeholder="ID oder Passnummer" className={inputCls()} />
+              placeholder="ID or passport number" className={inputCls()} />
           </div>
 
           <div>
-            <label className={labelCls}>Notizen</label>
+            <label className={labelCls}>Notes</label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)}
-              rows={2} placeholder="Optionale interne Notizen..."
+              rows={2} placeholder="Optional internal notes..."
               className={`${inputCls()} resize-none`} />
           </div>
         </div>
 
         <div className="flex justify-between px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
-          <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Wird gespeichert..." : "Mitarbeiter speichern ✓"}
+            {saving ? "Saving..." : "Save Staff Member ✓"}
           </Button>
         </div>
       </div>

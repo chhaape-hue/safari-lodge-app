@@ -13,25 +13,25 @@ interface Props {
 }
 
 const roomTypes: { value: RoomType; label: string }[] = [
-  { value: "standard", label: "Standard Zimmer" },
+  { value: "standard", label: "Standard Room" },
   { value: "suite", label: "Suite" },
-  { value: "tent", label: "Safari Zelt" },
-  { value: "family", label: "Familienzimmer" },
+  { value: "tent", label: "Safari Tent" },
+  { value: "family", label: "Family Room" },
   { value: "honeymoon", label: "Honeymoon Suite" },
-  { value: "dormitory", label: "Schlafsaal" },
+  { value: "dormitory", label: "Dormitory" },
 ]
 
 const roomStatuses: { value: RoomStatus; label: string; color: string }[] = [
-  { value: "available",   label: "Verfügbar",    color: "text-green-600" },
-  { value: "occupied",    label: "Belegt",        color: "text-blue-600" },
-  { value: "maintenance", label: "Wartung",       color: "text-orange-600" },
-  { value: "blocked",     label: "Gesperrt",      color: "text-red-600" },
+  { value: "available",   label: "Available",    color: "text-green-600" },
+  { value: "occupied",    label: "Occupied",     color: "text-blue-600" },
+  { value: "maintenance", label: "Maintenance",  color: "text-orange-600" },
+  { value: "blocked",     label: "Blocked",      color: "text-red-600" },
 ]
 
 const AMENITY_OPTIONS = [
-  "Klimaanlage", "WLAN", "Minibar", "Safariblick", "Privatpool", "Badewanne",
-  "Außendusche", "Himmelbett", "Kamin", "Butler-Service", "Terrasse",
-  "Kühlschrank", "Kaffeemaschine", "Direktzugang zum Busch",
+  "Air Conditioning", "WiFi", "Mini Bar", "Bush View", "Private Pool", "Bathtub",
+  "Outdoor Shower", "Four-Poster Bed", "Fireplace", "Butler Service", "Terrace",
+  "Refrigerator", "Coffee Machine", "Direct Bush Access",
 ]
 
 export function RoomForm({ room, propertyId, onClose }: Props) {
@@ -66,10 +66,10 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
 
   function validate() {
     const e: Record<string, string> = {}
-    if (!name.trim()) e.name = "Name erforderlich"
-    if (!selectedPropertyId) e.property = "Property erforderlich"
-    if (!price || isNaN(parseFloat(price))) e.price = "Gültiger Preis erforderlich"
-    if (!roomNumber.trim()) e.roomNumber = "Zimmernummer erforderlich"
+    if (!name.trim()) e.name = "Name is required"
+    if (!selectedPropertyId) e.property = "Property is required"
+    if (!price || isNaN(parseFloat(price))) e.price = "Valid price is required"
+    if (!roomNumber.trim()) e.roomNumber = "Room number is required"
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -106,7 +106,7 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 bg-[#FAF7F2] rounded-t-2xl">
           <h2 className="text-lg font-bold text-stone-900">
-            {isEdit ? `Zimmer bearbeiten: ${room?.name}` : "Neues Zimmer / Unterkunft"}
+            {isEdit ? `Edit Room: ${room?.name}` : "New Room / Accommodation Unit"}
           </h2>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-stone-200 transition-colors">
             <X className="h-4 w-4 text-stone-500" />
@@ -120,7 +120,7 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
               <label className={labelCls}>Property *</label>
               <select value={selectedPropertyId} onChange={e => setSelectedPropertyId(e.target.value)}
                 className={inputCls(errors.property)}>
-                <option value="">Bitte wählen...</option>
+                <option value="">Please select...</option>
                 {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
               {errors.property && <p className="text-xs text-red-500 mt-1">{errors.property}</p>}
@@ -130,13 +130,13 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
           {/* Name + Number */}
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className={labelCls}>Zimmer-/Zeltname *</label>
+              <label className={labelCls}>Room / Tent Name *</label>
               <input type="text" value={name} onChange={e => setName(e.target.value)}
-                placeholder="z.B. Leopard Chalet, Suite Okavango" className={inputCls(errors.name)} />
+                placeholder="e.g. Leopard Chalet, Okavango Suite" className={inputCls(errors.name)} />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
             </div>
             <div>
-              <label className={labelCls}>Zimmernummer *</label>
+              <label className={labelCls}>Room Number *</label>
               <input type="text" value={roomNumber} onChange={e => setRoomNumber(e.target.value)}
                 placeholder="101, A2..." className={inputCls(errors.roomNumber)} />
               {errors.roomNumber && <p className="text-xs text-red-500 mt-1">{errors.roomNumber}</p>}
@@ -146,7 +146,7 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
           {/* Type + Status */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Zimmertyp</label>
+              <label className={labelCls}>Room Type</label>
               <select value={type} onChange={e => setType(e.target.value as RoomType)} className={inputCls()}>
                 {roomTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
@@ -157,8 +157,8 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
                 {roomStatuses.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
               </select>
               <p className={`text-xs mt-1 font-medium ${roomStatuses.find(s => s.value === status)?.color}`}>
-                {status === "maintenance" ? "Zimmer wird im Kalender als blockiert angezeigt" :
-                 status === "blocked" ? "Zimmer ist manuell gesperrt (kein Buchung möglich)" : ""}
+                {status === "maintenance" ? "Room will show as blocked in the calendar" :
+                 status === "blocked" ? "Room is manually blocked (no bookings possible)" : ""}
               </p>
             </div>
           </div>
@@ -166,15 +166,15 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
           {/* Price + Capacity */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelCls}>Basispreis / Nacht (BWP) *</label>
+              <label className={labelCls}>Base Price / Night (BWP) *</label>
               <input type="number" value={price} onChange={e => setPrice(e.target.value)}
                 placeholder="0" className={inputCls(errors.price)} />
               {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
             </div>
             <div>
-              <label className={labelCls}>Kapazität gesamt</label>
+              <label className={labelCls}>Total Capacity</label>
               <select value={capacity} onChange={e => setCapacity(Number(e.target.value))} className={inputCls()}>
-                {[1,2,3,4,5,6,8,10,12].map(n => <option key={n} value={n}>{n} Personen</option>)}
+                {[1,2,3,4,5,6,8,10,12].map(n => <option key={n} value={n}>{n} guests</option>)}
               </select>
             </div>
           </div>
@@ -182,42 +182,42 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
           {/* Max adults + children */}
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className={labelCls}>Max. Erwachsene</label>
+              <label className={labelCls}>Max Adults</label>
               <select value={maxAdults} onChange={e => setMaxAdults(Number(e.target.value))} className={inputCls()}>
                 {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Max. Kinder</label>
+              <label className={labelCls}>Max Children</label>
               <select value={maxChildren} onChange={e => setMaxChildren(Number(e.target.value))} className={inputCls()}>
                 {[0,1,2,3,4].map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Fläche (m²)</label>
+              <label className={labelCls}>Size (m²)</label>
               <input type="number" value={sqm} onChange={e => setSqm(e.target.value)}
-                placeholder="z.B. 45" className={inputCls()} />
+                placeholder="e.g. 45" className={inputCls()} />
             </div>
           </div>
 
           {/* Floor */}
           <div>
-            <label className={labelCls}>Etage / Lage</label>
+            <label className={labelCls}>Floor / Location</label>
             <input type="text" value={floor} onChange={e => setFloor(e.target.value)}
-              placeholder="z.B. 1, EG, Riverfront..." className={inputCls()} />
+              placeholder="e.g. 1, Ground Floor, Riverfront..." className={inputCls()} />
           </div>
 
           {/* Description */}
           <div>
-            <label className={labelCls}>Beschreibung</label>
+            <label className={labelCls}>Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)}
-              rows={2} placeholder="Zimmer-/Zeltbeschreibung für Buchungsbestätigungen..."
+              rows={2} placeholder="Room / tent description for booking confirmations..."
               className={`${inputCls()} resize-none`} />
           </div>
 
           {/* Amenities */}
           <div>
-            <label className={labelCls}>Ausstattung</label>
+            <label className={labelCls}>Amenities</label>
             <div className="flex flex-wrap gap-2 mt-1">
               {AMENITY_OPTIONS.map(a => (
                 <button key={a} type="button" onClick={() => toggleAmenity(a)}
@@ -231,15 +231,15 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
               ))}
             </div>
             {amenities.length > 0 && (
-              <p className="text-xs text-stone-500 mt-2">{amenities.length} ausgewählt</p>
+              <p className="text-xs text-stone-500 mt-2">{amenities.length} selected</p>
             )}
           </div>
         </div>
 
         <div className="flex justify-between px-6 py-4 border-t border-stone-100 bg-stone-50 rounded-b-2xl">
-          <Button variant="ghost" onClick={onClose}>Abbrechen</Button>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Wird gespeichert..." : isEdit ? "Änderungen speichern ✓" : "Zimmer anlegen ✓"}
+            {saving ? "Saving..." : isEdit ? "Save Changes ✓" : "Create Room ✓"}
           </Button>
         </div>
       </div>
