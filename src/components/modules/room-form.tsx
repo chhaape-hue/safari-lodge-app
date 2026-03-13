@@ -90,7 +90,7 @@ export function RoomForm({ room, propertyId, onClose }: Props) {
         max_children: maxChildren,
         base_price_per_night: parseFloat(price),
         status,
-        floor: floor ? parseInt(floor) : undefined,
+        floor: floor ? floor.trim() : undefined,
         square_meters: sqm ? parseFloat(sqm) : undefined,
         description: description || undefined,
         amenities,
