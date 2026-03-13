@@ -60,11 +60,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // getSession() triggers the client's internal _initialize() so it reads
     // the stored token from localStorage.  Without it, INITIAL_SESSION never fires.
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      clearTimeout(timeout)
       if (session?.user) {
         const profile = await loadProfile(session.user.id)
+        clearTimeout(timeout)
         setState({ user: session.user, profile, session, loading: false })
       } else {
+        clearTimeout(timeout)
         setState(s => ({ ...s, loading: false }))
       }
     }).catch(() => {
