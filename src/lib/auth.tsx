@@ -36,10 +36,9 @@ type Auth = AuthState & AuthActions
 
 const AuthContext = createContext<Auth | null>(null)
 
-// Read the stored Supabase session directly from localStorage – synchronous,
-// zero network I/O.  Used to pre-populate auth state so the spinner clears
-// immediately even when the access token has expired and Supabase needs to do
-// a background token refresh.
+// Read the stored Supabase session directly from localStorage.
+// This is synchronous and requires zero network I/O.
+// Supabase v2 stores the session at key "sb-<project-ref>-auth-token".
 function readStoredSession(): { user: User; session: Session } | null {
   if (typeof window === "undefined") return null
   try {
@@ -49,8 +48,6 @@ function readStoredSession(): { user: User; session: Session } | null {
         const raw = localStorage.getItem(key)
         if (!raw) break
         const stored = JSON.parse(raw)
-        // Only use if the refresh token is present – without it the user
-        // cannot be silently re-authenticated.
         if (stored?.user?.id && stored?.refresh_token) {
           return { user: stored.user as User, session: stored as Session }
         }
@@ -58,7 +55,7 @@ function readStoredSession(): { user: User; session: Session } | null {
       }
     }
   } catch {
-    // localStorage unavailable (private mode, etc.) – fall through
+    // localStorage unavailable (e.g. private browsing with blocked storage)
   }
   return null
 }
@@ -78,39 +75,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   useEffect(() => {
-    // ── Step 1: instant init from localStorage ──────────────────────────────
-    // Clears the spinner before any network activity.  Even if the access
-    // token has expired, the user object and refresh_token are still valid
-    // enough to identify who is logged in.  Supabase will refresh the token
-    // in the background (step 2).
+    // ── Step 1: instant init from localStorage ────────────────────────────
+    // Clears the spinner before any network activity, even if the access
+    // token is expired (Supabase will refresh it in the background).
     const stored = readStoredSession()
     if (stored) {
+      console.log("[auth] instant init from localStorage for", stored.user.email)
       setState(s => ({ ...s, user: stored.user, session: stored.session, loading: false }))
       fetchProfile(stored.user.id)
         .then(profile => setState(s => s.user?.id === stored.user.id ? { ...s, profile } : s))
         .catch(() => {})
+    } else {
+      console.log("[auth] no stored session found in localStorage")
     }
 
-    // ── Step 2: subscribe to Supabase auth events ───────────────────────────
-    // Handles INITIAL_SESSION (after token refresh), TOKEN_REFRESHED, SIGNED_IN,
-    // SIGNED_OUT.  This is the authoritative source once Supabase has resolved.
+    // ── Step 2: safety timeout ────────────────────────────────────────────
+    // If neither localStorage nor Supabase resolves within 5 s, force-clear
+    // loading so the user is never stuck.  AuthGate will redirect to /login.
+    const safety = setTimeout(() => {
+      console.warn("[auth] safety timeout fired – forcing loading:false")
+      setState(s => s.loading ? { ...s, loading: false } : s)
+    }, 5000)
+
+    // ── Step 3: Supabase auth events ──────────────────────────────────────
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("[auth] onAuthStateChange:", event, session?.user?.email ?? "null")
+      clearTimeout(safety)
+
       if (event === "SIGNED_OUT") {
         setState({ user: null, profile: null, session: null, loading: false })
         return
       }
 
       if (!session?.user) {
-        // Confirmed: no valid session (visitor not logged in)
         setState(s => ({ ...s, loading: false }))
         return
       }
 
-      // Update with the real, freshly-validated session
       setState(s => ({ ...s, user: session.user, session, loading: false }))
 
-      // Load / refresh the profile on sign-in events.  For TOKEN_REFRESHED
-      // the user hasn't changed so we can keep the cached profile.
+      // Load profile on fresh sign-in, or on INITIAL_SESSION if localStorage
+      // didn't already kick off a profile load.
       if (event === "SIGNED_IN" || (event === "INITIAL_SESSION" && !stored)) {
         fetchProfile(session.user.id)
           .then(profile => setState(s => s.user?.id === session.user.id ? { ...s, profile } : s))
@@ -118,7 +123,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(safety)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
