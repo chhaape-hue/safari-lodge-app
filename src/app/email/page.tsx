@@ -9,69 +9,69 @@ import { Mail, Plus, Users, Send, Eye, Edit, TrendingUp } from "lucide-react"
 const campaigns = [
   {
     id: 1,
-    name: "Sommer Special 2025 – O Bona Moremi",
+    name: "Summer Special 2025 – O Bona Moremi",
     status: "sent",
     recipients: 1240,
     opened: 387,
     clicked: 89,
-    date: "05.03.2025",
+    date: "05 Mar 2025",
     type: "Promotion"
   },
   {
     id: 2,
-    name: "Neujahr Newsletter – Untouched Safaris",
+    name: "New Year Newsletter – Untouched Safaris",
     status: "sent",
     recipients: 1890,
     opened: 612,
     clicked: 134,
-    date: "02.01.2025",
+    date: "02 Jan 2025",
     type: "Newsletter"
   },
   {
     id: 3,
-    name: "Nkasa Plains Camp – Voranmeldung",
+    name: "Nkasa Plains Camp – Pre-registration",
     status: "draft",
     recipients: 0,
     opened: 0,
     clicked: 0,
     date: "–",
-    type: "Ankündigung"
+    type: "Announcement"
   },
   {
     id: 4,
-    name: "Buchungsbestätigung – Template",
+    name: "Booking Confirmation – Template",
     status: "template",
     recipients: 0,
     opened: 0,
     clicked: 0,
     date: "–",
-    type: "Transaktional"
+    type: "Transactional"
   },
 ]
 
 const statusConfig = {
-  sent: { label: "Gesendet", variant: "success" as const },
-  draft: { label: "Entwurf", variant: "neutral" as const },
+  sent: { label: "Sent", variant: "success" as const },
+  draft: { label: "Draft", variant: "neutral" as const },
   template: { label: "Template", variant: "info" as const },
-  scheduled: { label: "Geplant", variant: "warning" as const },
+  scheduled: { label: "Scheduled", variant: "warning" as const },
 }
 
 export default function EmailPage() {
   return (
     <div>
       <Topbar
-        title="E-Mail Marketing"
-        subtitle="Kampagnen und Mailverwaltung (Outlook-Integration)"
+        title="Email Marketing"
+        subtitle="Campaigns and email management"
         actions={
           <Button size="sm">
             <Plus className="h-3.5 w-3.5" />
-            Neue Kampagne
+            New Campaign
           </Button>
         }
       />
 
       <div className="p-6 space-y-6">
-        {/* Outlook Integration Banner */}
+        {/* Integration Banner */}
         <div className="flex items-start gap-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
           <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
             <Mail className="h-5 w-5 text-white" />
@@ -79,22 +79,22 @@ export default function EmailPage() {
           <div className="flex-1">
             <p className="font-semibold text-blue-900">Microsoft Outlook Integration</p>
             <p className="text-sm text-blue-700 mt-0.5">
-              Verbinde dein Outlook-Konto über Microsoft Graph API, um Kampagnen direkt aus dieser Verwaltungsapp zu senden
-              und eingehende Buchungsanfragen hier zu verwalten.
+              Connect your Outlook account via Microsoft Graph API to send campaigns directly from this system
+              and manage incoming booking enquiries.
             </p>
           </div>
           <Button variant="secondary" size="sm" className="shrink-0">
-            Outlook verbinden
+            Connect Outlook
           </Button>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Kontakte", value: "2.140", icon: Users, color: "text-blue-700" },
-            { label: "Kampagnen gesamt", value: "12", icon: Mail, color: "text-stone-700" },
-            { label: "Ø Öffnungsrate", value: "32.4%", icon: Eye, color: "text-green-700" },
-            { label: "Ø Klickrate", value: "8.7%", icon: TrendingUp, color: "text-amber-700" },
+            { label: "Contacts", value: "2,140", icon: Users, color: "text-blue-700" },
+            { label: "Total Campaigns", value: "12", icon: Mail, color: "text-stone-700" },
+            { label: "Avg Open Rate", value: "32.4%", icon: Eye, color: "text-green-700" },
+            { label: "Avg Click Rate", value: "8.7%", icon: TrendingUp, color: "text-amber-700" },
           ].map(stat => (
             <div key={stat.label} className="bg-white rounded-xl border border-stone-200 p-4 shadow-sm">
               <div className="flex items-center justify-between">
@@ -111,13 +111,13 @@ export default function EmailPage() {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle>Kampagnen</CardTitle>
-                <CardDescription>E-Mail Marketingkampagnen für Gäste und Interessenten</CardDescription>
+                <CardTitle>Campaigns</CardTitle>
+                <CardDescription>Email marketing campaigns for guests and prospects</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm">
                   <Users className="h-3.5 w-3.5" />
-                  Kontaktlisten
+                  Contact Lists
                 </Button>
                 <Button variant="secondary" size="sm">
                   <Edit className="h-3.5 w-3.5" />
@@ -130,13 +130,13 @@ export default function EmailPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-stone-100 text-xs text-stone-500 uppercase tracking-wider">
-                  <th className="px-5 py-3 text-left font-medium">Kampagne</th>
-                  <th className="px-5 py-3 text-left font-medium">Typ</th>
+                  <th className="px-5 py-3 text-left font-medium">Campaign</th>
+                  <th className="px-5 py-3 text-left font-medium">Type</th>
                   <th className="px-5 py-3 text-left font-medium">Status</th>
-                  <th className="px-5 py-3 text-right font-medium">Empfänger</th>
-                  <th className="px-5 py-3 text-right font-medium">Geöffnet</th>
-                  <th className="px-5 py-3 text-right font-medium">Geklickt</th>
-                  <th className="px-5 py-3 text-left font-medium">Datum</th>
+                  <th className="px-5 py-3 text-right font-medium">Recipients</th>
+                  <th className="px-5 py-3 text-right font-medium">Opened</th>
+                  <th className="px-5 py-3 text-right font-medium">Clicked</th>
+                  <th className="px-5 py-3 text-left font-medium">Date</th>
                   <th className="px-5 py-3"></th>
                 </tr>
               </thead>
@@ -184,7 +184,7 @@ export default function EmailPage() {
                               </Button>
                               <Button size="sm">
                                 <Send className="h-3.5 w-3.5" />
-                                Senden
+                                Send
                               </Button>
                             </>
                           )}

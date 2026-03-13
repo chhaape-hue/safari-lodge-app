@@ -216,7 +216,7 @@ export function SupabaseStoreProvider({ children }: { children: ReactNode }) {
         error: null,
       })
     } catch (err: unknown) {
-      setState(s => ({ ...s, loading: false, error: (err as Error).message || "Ladefehler" }))
+      setState(s => ({ ...s, loading: false, error: (err as Error).message || "Failed to load data" }))
     }
   }, [])
 

@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Untouched Safaris – Lodge Management",
-  description: "Verwaltungssystem für Lodges, Hausboote und Camps",
+  title: "Untouched Safaris – Property Management",
+  description: "Property Management System for Lodges, Houseboats and Camps",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
+    <html lang="en">
       <body className="antialiased">
         <Providers>{children}</Providers>
       </body>

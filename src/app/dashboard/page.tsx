@@ -6,39 +6,40 @@ import { StatCard } from "@/components/ui/stat-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { PageLoader } from "@/components/ui/loading-spinner"
 import {
   Building2, CalendarDays, DollarSign, Users,
-  TrendingUp, ArrowRight
+  TrendingUp, ArrowRight, AlertCircle
 } from "lucide-react"
 import { useStore } from "@/lib/store"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import Link from "next/link"
 
 const statusConfig: Record<string, { label: string; variant: "success" | "warning" | "danger" | "info" | "neutral" }> = {
-  confirmed: { label: "Bestätigt", variant: "info" },
-  checked_in: { label: "Eingecheckt", variant: "success" },
-  checked_out: { label: "Ausgecheckt", variant: "neutral" },
-  pending: { label: "Ausstehend", variant: "warning" },
-  cancelled: { label: "Storniert", variant: "danger" },
-  no_show: { label: "No-Show", variant: "danger" },
+  confirmed: { label: "Confirmed", variant: "info" },
+  checked_in: { label: "Checked In", variant: "success" },
+  checked_out: { label: "Checked Out", variant: "neutral" },
+  pending: { label: "Pending", variant: "warning" },
+  cancelled: { label: "Cancelled", variant: "danger" },
+  no_show: { label: "No Show", variant: "danger" },
 }
 
 const costCategoryLabels: Record<string, string> = {
-  staff: "Personal",
-  food_beverage: "Lebensmittel",
-  logistics: "Logistik",
-  maintenance: "Wartung",
-  utilities: "Nebenkosten",
+  staff: "Staff",
+  food_beverage: "Food & Beverage",
+  logistics: "Logistics",
+  maintenance: "Maintenance",
+  utilities: "Utilities",
   marketing: "Marketing",
-  insurance: "Versicherung",
-  other: "Sonstiges",
+  insurance: "Insurance",
+  other: "Other",
 }
 
 export default function DashboardPage() {
-  const { bookings, properties, rooms, guests, costs, staff } = useStore()
+  const { bookings, properties, rooms, guests, costs, staff, loading, error } = useStore()
 
   const today = new Date()
-  const todayStr = today.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
+  const todayStr = today.toLocaleDateString("en-GB", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })
   const currentMonth = today.getMonth()
   const currentYear = today.getFullYear()
 
@@ -110,7 +111,7 @@ export default function DashboardPage() {
     return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 4)
   }, [costs, currentMonth, currentYear])
 
-  const monthLabel = today.toLocaleDateString("de-DE", { month: "long" })
+  const monthLabel = today.toLocaleDateString("en-GB", { month: "long" })
 
   return (
     <div>
@@ -121,38 +122,47 @@ export default function DashboardPage() {
           <Link href="/bookings/new">
             <Button size="sm">
               <CalendarDays className="h-3.5 w-3.5" />
-              Neue Buchung
+              New Booking
             </Button>
           </Link>
         }
       />
 
-      <div className="p-6 space-y-6">
+      {loading && <PageLoader message="Loading dashboard data..." />}
+
+      {error && (
+        <div className="mx-6 mt-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+          <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {!loading && <div className="p-6 space-y-6">
         {/* Stats row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Auslastung"
+            title="Occupancy"
             value={`${occupancyRate}%`}
-            subtitle="Aktuell belegt"
+            subtitle="Currently occupied"
             icon={TrendingUp}
             color="amber"
           />
           <StatCard
-            title={`Buchungen (${monthLabel})`}
+            title={`Bookings (${monthLabel})`}
             value={monthBookings.length}
-            subtitle="Diesen Monat"
+            subtitle="This month"
             icon={CalendarDays}
             color="blue"
           />
           <StatCard
-            title={`Umsatz (${monthLabel})`}
+            title={`Revenue (${monthLabel})`}
             value={formatCurrency(revenueThisMonth)}
-            subtitle="Diesen Monat"
+            subtitle="This month"
             icon={DollarSign}
             color="green"
           />
           <StatCard
-            title="Aktives Personal"
+            title="Active Staff"
             value={activeStaff}
             subtitle={`${properties.length} Properties`}
             icon={Users}
@@ -166,23 +176,23 @@ export default function DashboardPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Aktuelle Buchungen</CardTitle>
+                  <CardTitle>Recent Bookings</CardTitle>
                   <Link href="/bookings">
                     <Button variant="ghost" size="sm">
-                      Alle anzeigen <ArrowRight className="h-3.5 w-3.5" />
+                      View all <ArrowRight className="h-3.5 w-3.5" />
                     </Button>
                   </Link>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
                 {recentBookings.length === 0 ? (
-                  <p className="text-sm text-stone-500 px-6 py-8 text-center">Keine aktiven Buchungen</p>
+                  <p className="text-sm text-stone-500 px-6 py-8 text-center">No active bookings</p>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-stone-100 text-xs text-stone-500 uppercase tracking-wider">
-                        <th className="px-6 py-3 text-left font-medium">Referenz</th>
-                        <th className="px-6 py-3 text-left font-medium">Gast</th>
+                        <th className="px-6 py-3 text-left font-medium">Reference</th>
+                        <th className="px-6 py-3 text-left font-medium">Guest</th>
                         <th className="px-6 py-3 text-left font-medium">Check-in</th>
                         <th className="px-6 py-3 text-left font-medium">Check-out</th>
                         <th className="px-6 py-3 text-left font-medium">Status</th>
@@ -219,11 +229,11 @@ export default function DashboardPage() {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>Zimmerstatus</CardTitle>
+                <CardTitle>Room Status</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {activeProperties.length === 0 ? (
-                  <p className="text-sm text-stone-500 text-center py-2">Keine aktiven Properties</p>
+                  <p className="text-sm text-stone-500 text-center py-2">No active properties</p>
                 ) : activeProperties.map((property) => {
                   const propRooms = roomsByProperty[property.id] || []
                   const available = propRooms.filter(r => r.status === "available").length
@@ -250,14 +260,14 @@ export default function DashboardPage() {
                           </div>
                           <div className="flex gap-3 mt-1.5">
                             <span className="text-xs text-stone-500">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mr-1" />{occupied} belegt
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 mr-1" />{occupied} occupied
                             </span>
                             <span className="text-xs text-stone-500">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 mr-1" />{available} frei
+                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-400 mr-1" />{available} free
                             </span>
                             {maintenance > 0 && (
                               <span className="text-xs text-stone-500">
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-400 mr-1" />{maintenance} Wartung
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-400 mr-1" />{maintenance} maintenance
                               </span>
                             )}
                           </div>
@@ -271,11 +281,11 @@ export default function DashboardPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Kosten ({monthLabel})</CardTitle>
+                <CardTitle>Costs ({monthLabel})</CardTitle>
               </CardHeader>
               <CardContent>
                 {costsByCategory.length === 0 ? (
-                  <p className="text-sm text-stone-500 text-center py-2">Keine Kosten diesen Monat</p>
+                  <p className="text-sm text-stone-500 text-center py-2">No costs this month</p>
                 ) : (
                   <div className="space-y-3">
                     {costsByCategory.map(([cat, amount]) => (
@@ -285,21 +295,21 @@ export default function DashboardPage() {
                       </div>
                     ))}
                     <div className="border-t border-stone-100 pt-2 flex justify-between text-sm font-semibold">
-                      <span>Gesamt</span>
+                      <span>Total</span>
                       <span>{formatCurrency(costsThisMonth)}</span>
                     </div>
                   </div>
                 )}
                 <Link href="/costs">
                   <Button variant="ghost" size="sm" className="w-full mt-3">
-                    Details <ArrowRight className="h-3.5 w-3.5" />
+                    View details <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               </CardContent>
             </Card>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   )
 }

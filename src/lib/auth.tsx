@@ -109,9 +109,9 @@ export function roleLabel(role: UserRole): string {
   const labels: Record<UserRole, string> = {
     admin: "Administrator",
     manager: "Manager",
-    reception: "Rezeption",
-    accountant: "Buchhaltung",
-    readonly: "Nur lesen",
+    reception: "Reception",
+    accountant: "Accountant",
+    readonly: "Read Only",
   }
   return labels[role]
 }
