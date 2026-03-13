@@ -45,7 +45,7 @@ export interface Room {
   max_adults: number
   max_children: number
   base_price_per_night: number
-  floor?: number | string
+  floor?: string
   square_meters?: number
   description?: string
   amenities: string[]
@@ -112,7 +112,6 @@ export interface CostEntry {
   supplier?: string
   invoice_number?: string
   notes?: string
-  created_by?: string
   created_at: string
 }
 
