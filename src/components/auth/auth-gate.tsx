@@ -4,22 +4,40 @@ import { useAuth } from "@/lib/auth"
 import { useRouter, usePathname } from "next/navigation"
 import { useEffect } from "react"
 import { Leaf } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
-/**
- * Wraps protected content. Redirects to /login if not authenticated.
- */
+const PUBLIC_PATHS = ["/login", "/set-password"]
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
 
   useEffect(() => {
-    if (!loading && !user && pathname !== "/login") {
+    if (loading) return
+
+    // Not logged in → go to login
+    if (!user && !PUBLIC_PATHS.includes(pathname)) {
       router.replace("/login")
+      return
+    }
+
+    // Logged in → check if session came from an invite (no password set yet)
+    if (user && !PUBLIC_PATHS.includes(pathname)) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return
+        // amr = authentication method reference
+        // "otp" means the user authenticated via invite/magic link, not a password
+        const amr = (session as { amr?: { method: string }[] }).amr
+        const methods = amr?.map(a => a.method) ?? []
+        const usedOtp = methods.includes("otp") && !methods.includes("password")
+        if (usedOtp) {
+          router.replace("/set-password")
+        }
+      })
     }
   }, [user, loading, pathname, router])
 
-  // Loading spinner
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
@@ -33,10 +51,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // On login page, just render
-  if (pathname === "/login") return <>{children}</>
-
-  // Not authenticated → blank (redirect happening)
+  if (PUBLIC_PATHS.includes(pathname)) return <>{children}</>
   if (!user) return null
 
   return <>{children}</>
